@@ -6,6 +6,7 @@ using Racing;
 using System.Text.RegularExpressions;
 using System.ComponentModel;
 using System.Threading.Tasks;
+using AngleSharp;
 
 namespace RacingWebScraper
 {
@@ -32,6 +33,18 @@ namespace RacingWebScraper
         private String ROOT_CARDS_URI = @"http://www.sportinglife.com/racing/racecards/";
         private List<IRaceHeader> _headers = null;
         private IProgress<BasicUpdate> _progress;
+
+
+        const String meetingSelector = "ul.meetings > li";
+        const String raceSelector = "ul.hr-meeting-races-container > li";
+        const String goingSelector = "span.hr-meeting-meta-value";
+        const String timeSelector = "span.hr-meeting-race-time";
+        const String racenameSelector = "div.hr-meeting-race-name-star";
+        const String raceinfoSelector = racenameSelector + "> span";
+        const String raceurlSelector = "li > a";
+        const String courseSelector = "div.dividerRow > h2";
+
+
         public SLifeRacingScraper(INotify ntf)
         {
             if(ntf == null) throw new ArgumentNullException("INotify is null in SLifeRacingScraper constructor");
@@ -60,53 +73,56 @@ namespace RacingWebScraper
 	
 	                List<IRaceHeader> headers = null;
 	                headers = new List<IRaceHeader>();
-	                String date = String.Format("{0:dd-MM-yyyy}", dt);
+	                String date = String.Format("{0:yyyy-MM-dd}", dt);
 	                String uri = ROOT_CARDS_URI + date;
 	
-	                String meetingsPage = await WebPage.GetAsync(uri);
-	                meetingsPage = PreFormatPage(meetingsPage);
-	
-	                MatchCollection mcRaceBoundary = RXSL.rxRaceStubBoundary.Matches(meetingsPage);
-	                double currentProgress = 0;
-	                double inc = 100 / mcRaceBoundary.Count;
-	                foreach (Match raceBoundary in mcRaceBoundary)
-	                {
-	                    int id = 0;
-	                    string course = null;
-	                    string time = null;
-	                    string title = null;
-	                    string info = null;
-	                    string url = null;
-	                    
-	
-	                    Match m = RXSL.rxRaceStub.Match(raceBoundary.Groups[1].Value);
-	                    if (m.Success)
-	                    {
-	                        title = m.Groups[0].Value;
-	                        time = m.Groups[1].Value;
-	                        url = SITE_PREFIX + m.Groups[2].Value;
-	                        //raceCard.Date = m.Groups[3].Value;
-	                        course = m.Groups[4].Value;
-	                        id = Convert.ToInt32(m.Groups[5].Value);
-	                        info = m.Groups[6].Value;
+                    var config = Configuration.Default.WithDefaultLoader();
+                    var document = await BrowsingContext.New(config).OpenAsync(uri);
+                    var meetings = document.QuerySelectorAll(meetingSelector);
+	                
+                    double currentProgress = 0;
+                    double inc = 0;
+                    if (meetings.Length > 0)
+                    {
+                        inc = 100 / meetings.Length;
+                    }
+
+                    foreach(var meeting in meetings)
+                    {
+                        int id = 0;
+                        var course = meeting.QuerySelector(courseSelector).TextContent; // div.dividerRow > h2
+                        var going = meeting.QuerySelector(goingSelector).TextContent;
+                        var races = meeting.QuerySelectorAll(raceSelector);
+
+                        foreach(var race in races)
+                        {
+                            String rxRacename = "\\s*\\(.*\\)";
+                            var title = race.QuerySelector(racenameSelector).TextContent;
+                            title = Regex.Replace(title, rxRacename, "");
+                            var time = race.QuerySelector(timeSelector).TextContent;
+                            var info = race.QuerySelector(racenameSelector).TextContent;
+                            var url = race.QuerySelector(raceurlSelector).GetAttribute("href");
+
 
                             RaceType type;
-                            if (info.Contains(HURDLE))
+                            if (info.ToUpper().Contains("HURDLE"))
                                 type = RaceType.HURDLES;
-                            else if (info.Contains(CHASE))
+                            else if (info.ToUpper().Contains("CHASE"))
                                 type = RaceType.FENCES;
                             else
                                 type = RaceType.FLAT;
 
-	                        IRaceHeader header = new RaceHeader(id, course, date, time, title, info, url, type);
-	                        headers.Add(header);
-	                    }
-	                    currentProgress += inc;
-	                    progress.Report(new BasicUpdate((int)currentProgress, String.Format("Getting Meeting : {0}", course)));
-	                }
-	                progress.Report(new BasicUpdate(MAX_PROGRESS, "Completed."));
-	                return headers;
-	            });
+                            IRaceHeader header = new RaceHeader(id, course, date, time, title, info, url, type);
+                            headers.Add(header);
+
+                        }
+                        currentProgress += inc;
+                        progress.Report(new BasicUpdate((int)currentProgress, string.Format("getting meeting : {0}", course)));
+                    }
+
+                    progress.Report(new BasicUpdate(MAX_PROGRESS, "completed."));
+                    return headers;
+                });
             }
             catch (System.Exception)
             {
