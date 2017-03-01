@@ -35,14 +35,14 @@ namespace RacingWebScraper
         private IProgress<BasicUpdate> _progress;
 
 
-        const String meetingSelector = "ul.meetings > li";
-        const String raceSelector = "ul.hr-meeting-races-container > li";
-        const String goingSelector = "span.hr-meeting-meta-value";
-        const String timeSelector = "span.hr-meeting-race-time";
-        const String racenameSelector = "div.hr-meeting-race-name-star";
-        const String raceinfoSelector = racenameSelector + "> span";
-        const String raceurlSelector = "li > a";
-        const String courseSelector = "div.dividerRow > h2";
+        private const String meetingSelector = "ul.meetings > li";
+        private const String raceSelector = "ul.hr-meeting-races-container > li";
+        private const String goingSelector = "span.hr-meeting-meta-value";
+        private const String timeSelector = "span.hr-meeting-race-time";
+        private const String racenameSelector = "div.hr-meeting-race-name-star";
+        private const String raceinfoSelector = racenameSelector + "> span";
+        private const String raceurlSelector = "li > a";
+        private const String courseSelector = "div.dividerRow > h2";
 
 
         public SLifeRacingScraper(INotify ntf)
@@ -101,7 +101,7 @@ namespace RacingWebScraper
                             title = Regex.Replace(title, rxRacename, "");
                             var time = race.QuerySelector(timeSelector).TextContent;
                             var info = race.QuerySelector(racenameSelector).TextContent;
-                            var url = race.QuerySelector(raceurlSelector).GetAttribute("href");
+                            var url = SITE_PREFIX + race.QuerySelector(raceurlSelector).GetAttribute("href");
 
 
                             RaceType type;
@@ -134,12 +134,12 @@ namespace RacingWebScraper
             return availHeaders;
         }
 
-        public async Task<List<IRaceDetail>> GetRaceDataAsync(List<String> urls, IProgress<BasicUpdate> progress)
+        public async Task<List<Race>> GetRaceDataAsync(List<String> urls, IProgress<BasicUpdate> progress)
         {
             if (urls == null) throw new ArgumentNullException("urls cannot be null");
             if (progress == null) throw new ArgumentNullException("progress cannot be null");
 
-            _progress = progress;
+             _progress = progress;
 
             if (_isRunning)
             {
@@ -147,14 +147,14 @@ namespace RacingWebScraper
                 return null;
             }
 
-            List<IRaceDetail> races = null;
+            List<Race> races = null;
             _isRunning = true;
 
             try
             {
-                races = await Task.Run<List<IRaceDetail>>(async () =>
+                races = await Task.Run<List<Race>>(async () =>
                 {
-                    List<IRaceDetail> racesScraped = await ScrapeRacesAsync(urls);
+                    var racesScraped = await ScrapeRacesAsync(urls);
                     return racesScraped;
                 });
             }

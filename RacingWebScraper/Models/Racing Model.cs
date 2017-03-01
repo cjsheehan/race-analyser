@@ -16,7 +16,7 @@ namespace RacingWebScraper
         private BindingList<String> _boundMeetings;
         private BindingList<IRaceHeader> _boundRaces;
         private INotify _ntf;
-        private List<IRace> _scrapedRaces;
+        private List<Race> _scrapedRaces;
         private List<IRaceHeader> _raceHeaders;
         private int _currentTaskProgress;
 
@@ -26,7 +26,7 @@ namespace RacingWebScraper
             _scraper = new SLifeRacingScraper(ntf);
             _boundRaces = new BindingList<IRaceHeader>();
             _boundMeetings = new BindingList<String>();
-            _scrapedRaces = new List<IRace>();
+            _scrapedRaces = new List<Race>();
             _ntf = ntf;
             _scraper.GetRaceDataAsyncCompleted += GetRaceDataCompletedEventHandler;
         }
@@ -75,7 +75,7 @@ namespace RacingWebScraper
                 foreach (var detail in e.RaceData)
                 {
                     IRaceHeader header = GetRaceHeader(detail.Url);
-                    IRace race = null;
+                    Race race = null;
                     if (header != null)
                     {
                         RacingFactory.CreateRace(header, detail, ref race);
@@ -139,16 +139,16 @@ namespace RacingWebScraper
 
             if (raceUrls.Count > 0)
             {
-                var raceDetails = await _scraper.GetRaceDataAsync(raceUrls, progress);
+                var races = await _scraper.GetRaceDataAsync(raceUrls, progress);
                 _scrapedRaces.Clear();
-                foreach (var detail in raceDetails)
+                foreach (var race in races)
                 {
-                    IRaceHeader header = GetRaceHeader(detail.Url);
-                    IRace race = null;
-                    if (header != null)
-                    {
-                        RacingFactory.CreateRace(header, detail, ref race);
-                    }
+                    //IRaceHeader header = GetRaceHeader(detail.Url);
+                    //IRace race = null;
+                    //if (header != null)
+                    //{
+                    //    RacingFactory.CreateRace(header, detail, ref race);
+                    //}
 
                     if (race != null)
                     {

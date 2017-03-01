@@ -8,7 +8,7 @@ namespace Racing
 {
     public static class RacingFactory
     {
-        public static void CreateRace(IRaceHeader header, IRaceDetail details, ref IRace race)
+        public static void CreateRace(IRaceHeader header, IRaceDetail details, ref Race race)
         {
             if(header == null) throw new NullReferenceException("IRaceHeader cannot be null at RaceFactory.CreateRace()");
             if(details == null) throw new NullReferenceException("IRaceDetail cannot be null at RaceFactory.CreateRace()");
@@ -30,7 +30,7 @@ namespace Racing
             race.TotalYds = details.TotalYds;
             race.Going = details.Going; 
             race.Class = details.Class;
-            race.Runners  = details.Runners;
+            race.NumberOfRunners  = details.Runners;
             race.Horses = details.Horses;
         }
 

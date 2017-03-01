@@ -26,9 +26,9 @@ namespace RacingWebScraper
             _execLoc = execLoc.Replace("file:\\", "");
             _scriptFilePath = _execLoc + "\\" + SCRIPT_NAME;
         }
-        public async System.Threading.Tasks.Task Analyse(List<IRace> races)
+        public async System.Threading.Tasks.Task Analyse(List<Race> races)
         {
-            if (races == null) throw new ArgumentNullException("List<IRace> races cannot be null");
+            if (races == null) throw new ArgumentNullException("List<Race> races cannot be null");
              if (String.IsNullOrEmpty(WorkDir)) throw new ArgumentNullException("string WorkDir cannot be null or empty");
 
             string outFile = WorkDir + "\\" + XML_FILE;
@@ -38,26 +38,26 @@ namespace RacingWebScraper
                 fi.Create();
 
             List<DTO_Race> dtoRaces = new List<DTO_Race>();
-            foreach (var v in races)
-            {
-                DTO_Race race = null;
-                if (v != null)
-                {
-                    RacingFactory.CreateRaceDTO(v, ref race);
-                }
+            //foreach (var v in races)
+            //{
+            //    DTO_Race race = null;
+            //    if (v != null)
+            //    {
+            //        RacingFactory.CreateRaceDTO(v, ref race);
+            //    }
 
-                if (race != null)
-                {
-                    dtoRaces.Add(race);
-                }
-            }
+            //    if (race != null)
+            //    {
+            //        dtoRaces.Add(race);
+            //    }
+            //}
             
 
             using (TextWriter tw = new StreamWriter(fi.Open(FileMode.Truncate)))
             {
                 // Serializing class
-                System.Xml.Serialization.XmlSerializer x = new System.Xml.Serialization.XmlSerializer(dtoRaces.GetType());
-                x.Serialize(tw, dtoRaces);
+                System.Xml.Serialization.XmlSerializer x = new System.Xml.Serialization.XmlSerializer(races.GetType());
+                x.Serialize(tw, races);
             }
 
 

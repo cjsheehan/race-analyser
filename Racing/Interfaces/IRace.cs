@@ -54,7 +54,7 @@ namespace Racing
         string Going { get; set; }
         Going Egoing { get; set; }
         string Class { get; set; }
-        string Runners { get; set; }
+        int Runners { get; set; }
         List<IHorse> Horses { get; set; }
     }
 }

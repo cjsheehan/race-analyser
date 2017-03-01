@@ -1,4 +1,7 @@
-﻿using Racing;
+﻿using AngleSharp;
+using AngleSharp.Dom;
+using AngleSharp.Dom.Html;
+using Racing;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -8,16 +11,19 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace RacingWebScraper 
+namespace RacingWebScraper
 {
     public partial class SLifeRacingScraper : IRacingScraper
     {
+        private static readonly log4net.ILog log =
+    log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         public event EventHandler<GetRaceDataAsyncCompletedEventArgs> GetRaceDataAsyncCompleted;
         private const string POUND = "pound";
         private const string EURO = "euro";
         private const string DOLLAR = "dollar";
 
-        private object _safeLock  = new object();
+        private object _safeLock = new object();
 
         private int _numReq = 0;  // Used to calculate the increment for progress updates
         private double _progInc = 0; // The increment used in progress updates
@@ -25,6 +31,27 @@ namespace RacingWebScraper
         private string _currentRace = "";
 
         private const int MIN_HORSES_PER_RACE = 2;
+
+
+        // race info selectors
+        const String raceNameSelector = "li.hr-racecard-summary-race-name";
+        const String raceDistanceSelector = "li.hr-racecard-summary-race-distance";
+        const String raceGoingSelector = raceDistanceSelector;
+        
+
+
+        //private const String runnerSelector = "di.hr-racing-runner-key-info-container";
+
+
+        private String GetRunnerName(AngleSharp.Dom.IElement element)
+        {
+            if (element == null) throw new ArgumentNullException("element is null");
+            const String horseNameSelector = "span.hr-racing-runner-horse-name";
+            var horseName = element.QuerySelector(horseNameSelector).TextContent;
+            return horseName;
+        }
+
+
         protected virtual void OnGetRaceDataAsyncCompleted(List<IRaceDetail> raceData)
         {
             GetRaceDataAsyncCompletedEventArgs args = new GetRaceDataAsyncCompletedEventArgs(raceData);
@@ -35,90 +62,90 @@ namespace RacingWebScraper
             }
         }
 
-        private async Task<List<IRaceDetail>> ScrapeRacesAsync(List<String> raceUrls)
+        private async Task<List<Race>> ScrapeRacesAsync(List<String> raceUrls)
         {
-            List<IRaceDetail> racesDetail = null;
-	        racesDetail = new List<IRaceDetail>();
+            List<Race> races = new List<Race>();
             double currentProgress = 0;
             double inc = 100 / raceUrls.Count;
             _progress.Report(new BasicUpdate(MIN_PROGRESS, ""));
-	        foreach (var url in raceUrls)
-	        {
-                String raceContent = await WebPage.GetAsync(url);
-	            raceContent = PreFormatPage(raceContent);
-	            IRaceDetail raceData = ScrapeRaceDetail(raceContent);
-	            raceData.Url = url;
-                _currentRace = raceData.Url;
-                IList<string> horseData = GetHorseDataAsStrings(raceContent);
-                raceData.Horses = ScrapeHorsesParallel(horseData);
-	            racesDetail.Add(raceData);
+            foreach (var url in raceUrls)
+            {
+                var config = Configuration.Default.WithDefaultLoader();
+                var document = await BrowsingContext.New(config).OpenAsync(url);
+                var test = document.QuerySelectorAll("ul");
+                var race = ScrapeRaceDetail(document);
+                //var runners = ScrapeRunnersParallel(document);
+                //racesDetail.Add(raceData);
                 currentProgress += inc;
-	        }
+            }
             _progress.Report(new BasicUpdate(MAX_PROGRESS, "Completed."));
-            return racesDetail;
+            return races;
         }
 
-        private IRaceDetail ScrapeRaceDetail(String raceContent)
+        private Race ScrapeRaceDetail(IDocument document)
         {
-            IRaceDetail race = new RaceInfo();
-
-            // Grouped Content : Info, Distance, Class, Num Runners + a match for going
-            String content = null;
-            string prizeData = null;
-            string[] items = null;
-            Match mCont = RXSL.rxContent.Match(raceContent);
-            if (mCont.Success)
-            {
-                content = mCont.Groups[1].Value;
-                // Going
-                race.Going = Utility.RemoveWhitespace(mCont.Groups[2].Value);
-                items = content.Split(',');
-            }
-            else
-            {
-                mCont = RXSL.rxContentAlt1.Match(raceContent);
-            }
-
-            if (mCont.Success)
-            {
-                content = mCont.Groups[1].Value;
-                prizeData = mCont.Groups[2].Value;
-                // Going
-                race.Going = Utility.RemoveWhitespace(mCont.Groups[3].Value);
-                items = content.Split(',');
-            }
-
-            if (items != null)
-            {
-                //race.Info = items[0];
-                string info = items[0];
-                race.Dist = items[1];
-
-                foreach (String s in items)
-                {
-                    // Class
-                    Match mClass = RXSL.rxClass.Match(s);
-                    if (mClass.Success)
-                    {
-                        race.Class = Utility.RemoveWhitespace(mClass.Groups[1].Value);
-                    }
-
-                    // Number runners
-                    Match mRunners = RXSL.rxRunners.Match(s);
-                    if (mRunners.Success)
-                    {
-                        race.Runners = Utility.RemoveWhitespace(mRunners.Groups[1].Value);
-                    }
-
-                }
-            }
-
-            PrizeList pl = GetPrizeMoney(prizeData);
-            if (pl != null)
-                race.Prizes = pl;
+            Race race = new Race();
+            race.Dist = ScrapeDistance(document);
+            race.Title = ScrapeRaceTitle(document);
+            race.NumberOfRunners = ScrapeNumberOfRunners(document);
+            // TODO : scrape prize money
 
             return race;
         }
+
+        private String ScrapeRaceTitle(IDocument document)
+        {
+            const String selector = "li.hr-racecard-summary-race-name";
+            return ScrapeTextContent(document, selector);
+        }
+
+        private String ScrapeDistance(IDocument document)
+        {
+            var selector = "li.hr-racecard-summary-race-distance";
+            var textContent = ScrapeTextContent(document, selector);
+            return textContent = textContent.Replace(", ", "");
+        }
+
+        private String ScrapeGoing(IDocument document)
+        {
+            // TODO : Going is required from meeting page if not scraped on the same day as the race as data
+            // is missing from SL racecard if too early
+            var selector = "li.hr-racecard-summary-race-distance";
+            return ScrapeTextContent(document, selector);
+        }
+
+        private int ScrapeNumberOfRunners(IDocument document)
+        {
+            const String selector = "li.hr-racecard-summary-race-runners";
+            var textContent = ScrapeTextContent(document, selector);
+            textContent = Regex.Match(textContent, @"\d+").Value;
+            
+
+            int numRunners;
+            bool res = int.TryParse(textContent, out numRunners);
+            if (res == false)
+            {
+                return -1;
+            }
+            else
+            {
+                return numRunners;
+            }
+        }
+
+        String ScrapeTextContent(IDocument document, String selector)
+        {
+            var selected = document.QuerySelector(selector);
+            if (selected != null)
+            {
+                return selected.TextContent;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
         private PrizeList GetPrizeMoney(String data)
         {
             PrizeList pl = null;
@@ -177,43 +204,47 @@ namespace RacingWebScraper
             IList<string> horseData = new List<string>();
             for (int i = 0; i < numHorses; i++)
             {
-                horseData.Add( mcHorseRows[i].Groups[0].Value);
+                horseData.Add(mcHorseRows[i].Groups[0].Value);
             }
 
             return horseData;
         }
 
-        private List<IHorse> ScrapeHorsesParallel(IList<string> horseData)
+        private List<String> ScrapeRunnersParallel(IDocument document)
         {
-            if (horseData.Count < MIN_HORSES_PER_RACE)
+            const String runnerSelector = "di.hr-racing-runner-key-info-container";
+            var runners = document.QuerySelectorAll(runnerSelector);
+
+            if (runners == null)
             {
-                throw new ArgumentOutOfRangeException("A Race requires at least 2 horses");
+                String msg = "no runners found";
+                log.Error(msg);
+                throw new InvalidScrapeException(msg);
             }
+            
+            //InitProgressHandler(horseData.Count);
+            ConcurrentQueue<String> parallelHorses = new ConcurrentQueue<String>();
+            Parallel.ForEach(runners, currentRunner =>
+            {
+                if (currentRunner != null)
+                {
+                    String horseName = GetRunnerName(currentRunner);
+                    parallelHorses.Enqueue(horseName);
+                    ScrapeHorseCompleted(horseName);
+                }
+                else
+                {
+                    _ntf.Notify("No Horse data to scrape", Ntf.WARNING);
+                }
 
-            InitProgressHandler(horseData.Count);
-	        ConcurrentQueue<IHorse> parallelHorses = new ConcurrentQueue<IHorse>();
-            Parallel.ForEach(horseData, horseIn =>
-	        {
-                if (!String.IsNullOrEmpty(horseIn))
-	            {
-                    IHorse phorse = ScrapeHorse(horseIn);
-	                parallelHorses.Enqueue(phorse);
-                    ScrapeHorseCompleted(phorse.Name);
-	            }
-	            else
-	            {
-	                _ntf.Notify("No Horse data to scrape", Ntf.WARNING);
-	            }
+            });
 
-	        });
-
-            List<IHorse> horses = new List<IHorse>();
-	        IHorse horseOut;
+            List<String> horses = new List<String>();
+            String horseOut;
             while (parallelHorses.TryDequeue(out horseOut))
-	        {
+            {
                 horses.Add(horseOut);
-	        }
-
+            }
 
             return horses;
         }
@@ -227,7 +258,7 @@ namespace RacingWebScraper
 
         private void ScrapeHorseCompleted(string horseName)
         {
-            lock(_safeLock) // This lock may not be needed as it only does a write
+            lock (_safeLock) // This lock may not be needed as it only does a write
             {
                 _currentProg += _progInc;
                 _progress.Report(new BasicUpdate((int)_currentProg, String.Format("{0} : {1}", _currentRace, horseName)));

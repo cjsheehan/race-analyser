@@ -8,13 +8,39 @@ using System.Xml;
 
 namespace Racing
 {
-    public class Race : IRace
+    public class Race
     {
         public int Id { get; set; }
         public string Course { get; set; }
         public string Date { get; set; }
         public string Time { get; set; }
-        public string Title { get; set; }
+
+        private string title;
+        public string Title
+        {
+            get
+            {
+                return this.title;
+            }
+            set
+            {
+                // RaceType is extracted from race title
+                if (value.ToUpper().Contains("HURDLE"))
+                {
+                    Type = RaceType.HURDLES;
+                }
+                else if (value.ToUpper().Contains("CHASE"))
+                {
+                    Type = RaceType.FENCES;
+                }
+                else
+                {
+                    Type = RaceType.FLAT;
+                }
+
+                this.title = value;
+            }
+        }
         public string Info { get; set; }
         public string Url { get; set; }
         public RaceType Type { get; set; }
@@ -28,7 +54,7 @@ namespace Racing
         public string Going { get; set; }
         public Going Egoing { get; set; }
         public string Class { get; set; }
-        public string Runners { get; set; }
+        public int NumberOfRunners { get; set; }
         public List<IHorse> Horses { get; set; }
         public Race()
         {
@@ -58,7 +84,7 @@ namespace Racing
                 + "TotalYds :" + TotalYds + Environment.NewLine + "\t\t"
                 + "Going :" + Egoing + Environment.NewLine + "\t\t"
                 + "Class :" + Class + Environment.NewLine + "\t\t"
-                + "Runners :" + Runners + Environment.NewLine + "\t\t"
+                + "Runners :" + NumberOfRunners + Environment.NewLine + "\t\t"
                 + "Url :" + Url + Environment.NewLine;
 
             return s;
@@ -166,7 +192,7 @@ namespace Racing
         public string Going { get; set; }
         public Going Egoing { get; set; }
         public string Class { get; set; }
-        public string Runners { get; set; }
+        public int Runners { get; set; }
         public List<IHorse> Horses { get; set; }
     }
 

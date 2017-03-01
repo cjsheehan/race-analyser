@@ -5,6 +5,6 @@ namespace RacingWebScraper
 {
     interface IRaceAnalyser
     {
-        System.Threading.Tasks.Task Analyse(List<Racing.IRace> races);
+        System.Threading.Tasks.Task Analyse(List<Racing.Race> races);
     }
 }

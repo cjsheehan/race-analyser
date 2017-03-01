@@ -10,9 +10,9 @@ namespace RacingWebScraper
 {
     public partial class SLifeRacingScraper
     {
-        private IHorse ScrapeHorse(String data)
+        private Horse ScrapeHorse(String data)
         {
-            IHorse horse = new Horse();
+            Horse horse = new Horse();
 
             // Split horse data around html list items "li"
             MatchCollection HorseElements = RXSL.rxListItemCln.Matches(data);

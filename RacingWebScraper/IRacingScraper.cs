@@ -11,7 +11,7 @@ namespace RacingWebScraper
     {
         event EventHandler<GetRaceDataAsyncCompletedEventArgs> GetRaceDataAsyncCompleted;
         Task<List<IRaceHeader>> GetHeadersAsync(DateTime dt, IProgress<BasicUpdate> progress);
-        Task<List<IRaceDetail>> GetRaceDataAsync(List<String> urls, IProgress<BasicUpdate> progress);
+        Task<List<Race>> GetRaceDataAsync(List<String> urls, IProgress<BasicUpdate> progress);
     }
 
 
