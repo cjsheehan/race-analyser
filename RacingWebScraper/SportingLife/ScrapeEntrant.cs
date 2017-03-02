@@ -31,7 +31,7 @@ namespace RacingWebScraper
             var trainerUrl = ScrapeTrainerUrl(element);
             var lastRace = ScrapeLastRace(horseUrl);
             var entrant = new Entrant();
-            return null;
+            return entrant;
         }
 
 
@@ -51,16 +51,8 @@ namespace RacingWebScraper
         private String ScrapeTrainerName(IElement element)
         {
             const String selector = "a.hr-racing-runner-form-trainer";
-            var textContent = ScrapeTextContent(element, selector);
-
-            if (textContent != null)
-            {
-                return Regex.Replace(textContent, "T:\\s*", "");
-            }
-            else
-            {
-                return "";
-            }
+            const String rx = "T:\\s*(.+)";
+            return ScrapeStringFromTextContent(element, selector, rx);
         }
 
         private String ScrapeJockeyUrl(IElement element)
@@ -71,42 +63,19 @@ namespace RacingWebScraper
 
         private String ScrapeJockeyName(IElement element)
         {
-            const String selector = "a.hr-racing-runner-form-jockey";
-            var textContent = ScrapeTextContent(element, selector);
-
-            if (textContent != null)
-            {
-                Regex rxName = new Regex("J:\\s*(.+?)\\s*\\(");
-                Match match = rxName.Match(textContent);
-                if (match.Success)
-                {
-                    return match.Groups[1].Value;
-                }
-            }
-
-            return "";
-   
+            const String selector = "span.hr-racing-runner-form-jockey-name";
+            return ScrapeTextContent(element, selector);
         }
 
 
         private int ScrapeJockeyClaim(IElement element)
         {
             const String selector = "a.hr-racing-runner-form-jockey";
-            var textContent = ScrapeTextContent(element, selector);
-
-            if (textContent != null)
+            const String rx = "J:\\s*.+?\\s*(\\d)";
+            var claim =  ScrapeIntFromTextContent(element, selector, rx);
+            if(claim != -1)
             {
-                Regex rxName = new Regex("J:\\s*.+?\\s*(\\d)");
-                Match match = rxName.Match(textContent);
-                if (match.Success)
-                {
-                    int claim;
-                    bool res = int.TryParse(match.Groups[1].Value, out claim);
-                    if (res == true)
-                    {
-                        return claim;
-                    }
-                }
+                return claim;
             }
 
             return 0;
@@ -114,67 +83,77 @@ namespace RacingWebScraper
 
         private String ScrapeHorseWeight(IElement element)
         {
-            const String selector = "";
-            return null;
+            const String selector = "div.hr-racing-runner-horse-sub-info > span:nth-child(2)";
+            return ScrapeTextContent(element, selector);
         }
 
         private int ScrapeHorseLastRan(IElement element)
         {
-            const String selector = "";
-            return 0;
+            const String selector = "sup.hr-racing-runner-horse-last-ran";
+            const String rx = "(\\d+)";
+            var lastRan = ScrapeIntFromTextContent(element, selector, rx);
+
+            if(lastRan > 0)
+            {
+                return lastRan;
+            }
+
+            return -1;
         }
 
         private String ScrapeHorseFormWatch(IElement element)
         {
-            const String selector = "";
-            return null;
+            const String selector = "div.hr-racing-runner-form-watch-info";
+            return ScrapeTextContent(element, selector);
         }
 
         private String ScrapeHorseForm(IElement element)
         {
-            const String selector = "";
-            return null;
+            const String selector = "label.hr-racing-runner-form-stat";
+            const String rx = "Form:\\s+(.+)";
+            return ScrapeStringFromTextContent(element, selector, rx);
         }
+
+
 
         private int ScrapeHorseOfficialRating(IElement element)
         {
-            const String selector = "";
-            return 0;
+            const String selector = "div.hr-racing-runner-horse-sub-info > span:nth-child(3)";
+            const String rx = "OR:\\s+(.+)";
+            return ScrapeIntFromTextContent(element, selector, rx);
         }
 
         private int ScrapeHorseAge(IElement element)
         {
-            const String selector = "";
-            return 0;
+            const String selector = "div.hr-racing-runner-horse-sub-info > span:nth-child(1)";
+            const String rx = "(\\d+)";
+            return ScrapeIntFromTextContent(element, selector, rx);
         }
 
         private String ScrapeHorseName(IElement element)
         {
-            const String selector = "";
-            return null;
+            const String selector = "span.hr-racing-runner-horse-name > a";
+            return ScrapeTextContent(element, selector);
         }
 
         private String ScrapeHorseUrl(IElement element)
         {
-            const String selector = "";
-            return null;
+            const String selector = "span.hr-racing-runner-horse-name > a";
+            return SITE_PREFIX + ScrapeUrl(element, selector);
         }
 
         private int ScrapeStallNumber(IElement element)
         {
-            const String selector = "";
-            return 0;
+            const String selector = "span.hr-racing-runner-stall-no";
+            const String rx = "(\\d+)";
+            return ScrapeIntFromTextContent(element, selector, rx);
         }
 
         private int ScrapeSaddleNumber(IElement element)
         {
-            const String selector = "";
-            return 0;
-        }
-
-        private String ScrapeUrl(IElement element, String selector)
-        {
-            return element.QuerySelector(selector).GetAttribute("href");
+            const String selector = "span.hr-racing-runner-saddle-cloth-no";
+            const String rx = "(\\d+)";
+            return ScrapeIntFromTextContent(element, selector, rx);
         }
 
     }

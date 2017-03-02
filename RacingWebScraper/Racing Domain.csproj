@@ -68,6 +68,7 @@
     <Compile Include="SportingLife\ScrapeEntrant.cs" />
     <Compile Include="SportingLife\ScrapeHorse.cs" />
     <Compile Include="SportingLife\ScrapeRaces.cs" />
+    <Compile Include="SportingLife\ScrapeUtil.cs" />
     <Compile Include="Utility.cs" />
   </ItemGroup>
   <ItemGroup>

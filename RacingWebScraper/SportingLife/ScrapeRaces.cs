@@ -140,31 +140,6 @@ namespace RacingWebScraper
             }
         }
 
-        String ScrapeTextContent(IDocument document, String selector)
-        {
-            var selected = document.QuerySelector(selector);
-            if (selected != null)
-            {
-                return selected.TextContent;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        String ScrapeTextContent(IElement element, String selector)
-        {
-            var selected = element.QuerySelector(selector);
-            if (selected != null)
-            {
-                return selected.TextContent;
-            }
-            else
-            {
-                return null;
-            }
-        }
 
         private PrizeList GetPrizeMoney(String data)
         {
