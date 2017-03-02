@@ -55,10 +55,10 @@ namespace Racing
         public Going Egoing { get; set; }
         public string Class { get; set; }
         public int NumberOfRunners { get; set; }
-        public List<IHorse> Horses { get; set; }
+        public List<Entrant> Horses { get; set; }
         public Race()
         {
-            Horses = new List<IHorse>();
+            Horses = new List<Entrant>();
             Prizes = new PrizeList();
             MinAge = 0;
             MaxAge = 0;
@@ -193,7 +193,7 @@ namespace Racing
         public Going Egoing { get; set; }
         public string Class { get; set; }
         public int Runners { get; set; }
-        public List<IHorse> Horses { get; set; }
+        public List<Entrant> Horses { get; set; }
     }
 
     public class PrizeList

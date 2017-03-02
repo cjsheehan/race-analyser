@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 
 namespace Racing
 {
-    public class Horse : IHorse
+    public class Entrant
     {
         public string Name { get; set; }
         public string Url { get; set; }
         public string ExtraInfo { get; set; }
         public string Jockey { get; set; }
         public string JockeyUrl { get; set; }
-        public string JockeyPen { get; set; }
+        public string JockeyClaim { get; set; }
         public string Weight { get; set; }
         public string Trainer { get; set; }
         public string TrainerUrl { get; set; }

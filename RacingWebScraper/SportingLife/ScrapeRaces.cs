@@ -43,13 +43,6 @@ namespace RacingWebScraper
         //private const String runnerSelector = "di.hr-racing-runner-key-info-container";
 
 
-        private String GetRunnerName(AngleSharp.Dom.IElement element)
-        {
-            if (element == null) throw new ArgumentNullException("element is null");
-            const String horseNameSelector = "span.hr-racing-runner-horse-name";
-            var horseName = element.QuerySelector(horseNameSelector).TextContent;
-            return horseName;
-        }
 
 
         protected virtual void OnGetRaceDataAsyncCompleted(List<IRaceDetail> raceData)
@@ -74,7 +67,7 @@ namespace RacingWebScraper
                 var document = await BrowsingContext.New(config).OpenAsync(url);
                 var test = document.QuerySelectorAll("ul");
                 var race = ScrapeRaceDetail(document);
-                //var runners = ScrapeRunnersParallel(document);
+                var runners = ScrapeRunnersParallel(document);
                 //racesDetail.Add(raceData);
                 currentProgress += inc;
             }
@@ -88,7 +81,21 @@ namespace RacingWebScraper
             race.Dist = ScrapeDistance(document);
             race.Title = ScrapeRaceTitle(document);
             race.NumberOfRunners = ScrapeNumberOfRunners(document);
-            // TODO : scrape prize money
+            const String entrantsSelector = "section.hr-racing-runner-wrapper";
+            var entrantsElements = document.QuerySelectorAll(entrantsSelector);
+            var entrants = new List<Entrant>();
+            foreach (var element in entrantsElements)
+            {
+                var entrant = ScrapeEntrant(element);
+                if (entrant != null)
+                {
+                    entrants.Add(entrant);
+                }
+                else
+                {
+                    log.Error("Failed to scrape entrant from:" + document.Url);
+                }
+            }
 
             return race;
         }
@@ -103,7 +110,7 @@ namespace RacingWebScraper
         {
             var selector = "li.hr-racecard-summary-race-distance";
             var textContent = ScrapeTextContent(document, selector);
-            return textContent = textContent.Replace(", ", "");
+            return textContent = Regex.Replace(textContent, ", .*", "");
         }
 
         private String ScrapeGoing(IDocument document)
@@ -136,6 +143,19 @@ namespace RacingWebScraper
         String ScrapeTextContent(IDocument document, String selector)
         {
             var selected = document.QuerySelector(selector);
+            if (selected != null)
+            {
+                return selected.TextContent;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        String ScrapeTextContent(IElement element, String selector)
+        {
+            var selected = element.QuerySelector(selector);
             if (selected != null)
             {
                 return selected.TextContent;
@@ -192,6 +212,13 @@ namespace RacingWebScraper
             return pl;
         }
 
+        private String ScrapeRunnerName(AngleSharp.Dom.IElement element)
+        {
+            const String selector = "span.hr-racing-runner-horse-name > a";
+            return element.QuerySelector(selector).TextContent;
+        }
+
+
         private IList<string> GetHorseDataAsStrings(String page)
         {
             if (String.IsNullOrEmpty(page)) throw new NullReferenceException("page == null or empty at ScrapeHorsesParallel()");
@@ -212,23 +239,23 @@ namespace RacingWebScraper
 
         private List<String> ScrapeRunnersParallel(IDocument document)
         {
-            const String runnerSelector = "di.hr-racing-runner-key-info-container";
+            const String runnerSelector = "div.hr-racing-runner-key-info-container";
             var runners = document.QuerySelectorAll(runnerSelector);
 
-            if (runners == null)
+            if (runners == null | runners.Length == 0)
             {
                 String msg = "no runners found";
                 log.Error(msg);
                 throw new InvalidScrapeException(msg);
             }
-            
-            //InitProgressHandler(horseData.Count);
+
+            InitProgressHandler(runners.Length);
             ConcurrentQueue<String> parallelHorses = new ConcurrentQueue<String>();
             Parallel.ForEach(runners, currentRunner =>
             {
                 if (currentRunner != null)
                 {
-                    String horseName = GetRunnerName(currentRunner);
+                    String horseName = ScrapeRunnerName(currentRunner);
                     parallelHorses.Enqueue(horseName);
                     ScrapeHorseCompleted(horseName);
                 }

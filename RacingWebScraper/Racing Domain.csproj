@@ -65,6 +65,7 @@
     <Compile Include="InvalidScrapeException.cs" />
     <Compile Include="SportingLife\RacingWebScraper.cs" />
     <Compile Include="SportingLife\RXSL.cs" />
+    <Compile Include="SportingLife\ScrapeEntrant.cs" />
     <Compile Include="SportingLife\ScrapeHorse.cs" />
     <Compile Include="SportingLife\ScrapeRaces.cs" />
     <Compile Include="Utility.cs" />

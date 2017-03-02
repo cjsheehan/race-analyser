@@ -10,9 +10,9 @@ namespace RacingWebScraper
 {
     public partial class SLifeRacingScraper
     {
-        private Horse ScrapeHorse(String data)
+        private Entrant ScrapeHorse(String data)
         {
-            Horse horse = new Horse();
+            Entrant horse = new Entrant();
 
             // Split horse data around html list items "li"
             MatchCollection HorseElements = RXSL.rxListItemCln.Matches(data);
@@ -91,9 +91,9 @@ namespace RacingWebScraper
                 horse.JockeyUrl = SITE_PREFIX + mJockey.Groups[1].Value;
                 Match mJockeyPen = RXSL.rxJockeyPen.Match(mJockey.Groups[3].Value);
                 if (mJockeyPen.Success)
-                    horse.JockeyPen = mJockeyPen.Groups[1].Value;
+                    horse.JockeyClaim = mJockeyPen.Groups[1].Value;
                 else
-                    horse.JockeyPen = "0";
+                    horse.JockeyClaim = "0";
 
                 if (String.IsNullOrEmpty(horse.Jockey))
                 {
@@ -101,12 +101,12 @@ namespace RacingWebScraper
                 }
             }
 
-            ScrapeHorseProfile(horse);
+            //ScrapeHorseProfile(horse);
 
-            if (String.IsNullOrEmpty(horse.LastRaceUrl) == false)
-            {
-                ScrapeLastRaceData(horse);
-            }
+            //if (String.IsNullOrEmpty(horse.LastRaceUrl) == false)
+            //{
+            //    ScrapeLastRaceData(horse);
+            //}
 
             return horse;
         } // CreateHorse
