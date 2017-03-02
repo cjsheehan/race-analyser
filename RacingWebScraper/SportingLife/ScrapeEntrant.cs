@@ -30,6 +30,7 @@ namespace RacingWebScraper
             var trainerName = ScrapeTrainerName(element);
             var trainerUrl = ScrapeTrainerUrl(element);
             var lastRace = ScrapeLastRace(horseUrl);
+            var odds = ScrapeOdds(element);
             var entrant = new Entrant();
             return entrant;
         }
@@ -154,6 +155,12 @@ namespace RacingWebScraper
             const String selector = "span.hr-racing-runner-saddle-cloth-no";
             const String rx = "(\\d+)";
             return ScrapeIntFromTextContent(element, selector, rx);
+        }
+
+        private String ScrapeOdds(IElement element)
+        {
+            const String selector = "a.sui-odds";
+            return ScrapeTextContent(element, selector);
         }
 
     }
