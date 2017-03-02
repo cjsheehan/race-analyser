@@ -92,6 +92,23 @@ namespace RacingWebScraper
         private int ScrapeJockeyClaim(IElement element)
         {
             const String selector = "a.hr-racing-runner-form-jockey";
+            var textContent = ScrapeTextContent(element, selector);
+
+            if (textContent != null)
+            {
+                Regex rxName = new Regex("J:\\s*.+?\\s*(\\d)");
+                Match match = rxName.Match(textContent);
+                if (match.Success)
+                {
+                    int claim;
+                    bool res = int.TryParse(match.Groups[1].Value, out claim);
+                    if (res == true)
+                    {
+                        return claim;
+                    }
+                }
+            }
+
             return 0;
         }
 
