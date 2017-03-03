@@ -33,9 +33,9 @@ namespace RacingWebScraper
         {
             // Get horse profile page
             var config = Configuration.Default.WithDefaultLoader();
-            var page = WebPage.GetAsync(horseUrl);
+            var profilePage = WebPage.GetAsync(horseUrl);
             var parser = new HtmlParser();
-            var profileDoc = parser.Parse(page.Result);
+            var profileDoc = parser.Parse(profilePage.Result);
     
             //var profileDoc = BrowsingContext.New(config).OpenAsync(horseUrl).Result;
             // Get required data from profile
@@ -56,8 +56,18 @@ namespace RacingWebScraper
             lastRace.Distance = ScrapeLastDistance(lastRaceDocument);
             lastRace.Going = ScrapeLastGoing(lastRaceDocument);
             lastRace.BeatenLengths = ScrapeBeatenLengths(lastRaceDocument, position);
+            lastRace.Weight = ScrapeLastWeight(lastRaceDocument, position);
             
             return lastRace;
+        }
+
+        private string ScrapeLastWeight(AngleSharp.Dom.Html.IHtmlDocument lastRaceDocument, int position)
+        {
+            const String entrantSelector = "div.hr-racing-runner-position-container";
+            var entrantElements = lastRaceDocument.QuerySelectorAll(entrantSelector);
+
+            const String selector = "div.hr-racing-runner-horse-sub-info > span:nth-child(2)";
+            return ScrapeTextContent(entrantElements[position - 1], selector);
         }
 
         private double ScrapeBeatenLengths(IDocument lastRaceDocument, int position)
