@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Racing;
 using System.Text.RegularExpressions;
 
 namespace RacingWebScraper
@@ -14,34 +13,27 @@ namespace RacingWebScraper
     {
         private Entrant ScrapeEntrant(IElement element)
         {
-            var saddleNumber = ScrapeSaddleNumber(element);
-            var stallNumber = ScrapeStallNumber(element);
-            var horseUrl = ScrapeHorseUrl(element);
-            var horseName = ScrapeHorseName(element);
-            var horseAge = ScrapeHorseAge(element);
-            var horseOfficialRating = ScrapeHorseOfficialRating(element);
-            var horseForm = ScrapeHorseForm(element);
-            var horseFormWatch = ScrapeHorseFormWatch(element);
-            var horseLastRan = ScrapeHorseLastRan(element);
-            var horseWeight = ScrapeHorseWeight(element);
-            var jockeyName = ScrapeJockeyName(element);
-            var jockeyUrl = ScrapeJockeyUrl(element);
-            var jockeyClaim = ScrapeJockeyClaim(element);
-            var trainerName = ScrapeTrainerName(element);
-            var trainerUrl = ScrapeTrainerUrl(element);
-            var lastRace = ScrapeLastRace(horseUrl);
-            var odds = ScrapeOdds(element);
             var entrant = new Entrant();
+            entrant.SaddleNumber = ScrapeSaddleNumber(element);
+            entrant.StallNumber = ScrapeStallNumber(element);
+            entrant.HorseUrl = ScrapeHorseUrl(element);
+            entrant.HorseName = ScrapeHorseName(element);
+            entrant.Age = ScrapeHorseAge(element);
+            entrant.Rating = ScrapeHorseOfficialRating(element);
+            entrant.Form = ScrapeHorseForm(element);
+            entrant.FormWatch = ScrapeHorseFormWatch(element);
+            entrant.LastRan = ScrapeHorseLastRan(element);
+            entrant.Weight = ScrapeHorseWeight(element);
+            entrant.JockeyName = ScrapeJockeyName(element);
+            entrant.JockeyUrl = ScrapeJockeyUrl(element);
+            entrant.JockeyClaim = ScrapeJockeyClaim(element);
+            entrant.TrainerName = ScrapeTrainerName(element);
+            entrant.TrainerUrl = ScrapeTrainerUrl(element);
+            entrant.Odds = ScrapeOdds(element);
+            entrant.LastRace = ScrapeLastRace(entrant.HorseUrl).Result;
+            
             return entrant;
         }
-
-
-        private String ScrapeLastRace(String horseUrl)
-        {
-            const String selector = "a.hr-racing-runner-form-trainer";
-            return null;
-        }
-
 
         private String ScrapeTrainerUrl(IElement element)
         {

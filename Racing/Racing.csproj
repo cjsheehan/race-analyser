@@ -48,6 +48,8 @@
   <ItemGroup>
     <Compile Include="Classes\DTO.cs" />
     <Compile Include="Classes\Entrant.cs" />
+    <Compile Include="Classes\LastRace.cs" />
+    <Compile Include="Classes\Position.cs" />
     <Compile Include="Classes\Race.cs">
       <SubType>Code</SubType>
     </Compile>

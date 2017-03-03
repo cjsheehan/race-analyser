@@ -75,7 +75,7 @@ namespace RacingWebScraper
             return races;
         }
 
-        private Race ScrapeRaceDetail(IDocument document)
+        private async Task<Race> ScrapeRaceDetail(IDocument document)
         {
             Race race = new Race();
             race.Dist = ScrapeDistance(document);
@@ -86,7 +86,7 @@ namespace RacingWebScraper
             var entrants = new List<Entrant>();
             foreach (var element in entrantsElements)
             {
-                var entrant = ScrapeEntrant(element);
+                Entrant entrant = ScrapeEntrant(element);
                 if (entrant != null)
                 {
                     entrants.Add(entrant);

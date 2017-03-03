@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AngleSharp.Dom;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -40,6 +41,11 @@ namespace RacingWebScraper
             return element.QuerySelector(selector).GetAttribute("href");
         }
 
+        String ScrapeUrl(AngleSharp.Dom.IDocument document, String selector)
+        {
+            return document.QuerySelector(selector).GetAttribute("href");
+        }
+
         private int ScrapeIntFromTextContent(AngleSharp.Dom.IElement element, String selector, String rxCapture)
         {
             var textContent = ScrapeTextContent(element, selector);
@@ -62,6 +68,22 @@ namespace RacingWebScraper
             return -1;
         }
 
+        private String ScrapeStringFromTextContent(IDocument document, String selector, String rxCapture)
+        {
+            var textContent = ScrapeTextContent(document, selector);
+            if (textContent != null)
+            {
+                Regex rx = new Regex(rxCapture);
+                Match match = rx.Match(textContent);
+                if (match.Success)
+                {
+                    return match.Groups[1].Value;
+                }
+            }
+
+            return "";
+        }
+
         private String ScrapeStringFromTextContent(AngleSharp.Dom.IElement element, String selector, String rxCapture)
         {
             var textContent = ScrapeTextContent(element, selector);
@@ -77,6 +99,7 @@ namespace RacingWebScraper
 
             return "";
         }
+
     }
 
 }

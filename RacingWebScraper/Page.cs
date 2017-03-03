@@ -10,7 +10,7 @@ namespace RacingWebScraper
 {
     public static class WebPage
     {
-        public static async Task<string> GetAsync(string uri)
+        public static async Task<String> GetAsync(string uri)
         {
             if(String.IsNullOrWhiteSpace(uri)) throw new ArgumentNullException("String uri cannot be empty or null");
             System.Net.Http.HttpClient client = new System.Net.Http.HttpClient();
