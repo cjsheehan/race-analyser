@@ -23,5 +23,7 @@ namespace Racing
         public String Class { get; set; }
         public int NumRunners { get; set; }
         public PrizeList LastRacePrizes { get; set; }
+
+        public string Odds { get; set; }
     }
 }

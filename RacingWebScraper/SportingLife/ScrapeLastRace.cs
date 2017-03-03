@@ -57,8 +57,18 @@ namespace RacingWebScraper
             lastRace.Going = ScrapeLastGoing(lastRaceDocument);
             lastRace.BeatenLengths = ScrapeBeatenLengths(lastRaceDocument, position);
             lastRace.Weight = ScrapeLastWeight(lastRaceDocument, position);
+            lastRace.Odds = ScrapeLastOdds(lastRaceDocument, position);
             
             return lastRace;
+        }
+
+        private String ScrapeLastOdds(AngleSharp.Dom.Html.IHtmlDocument lastRaceDocument, int position)
+        {
+            const String entrantSelector = "div.hr-racing-runner-position-container";
+            var entrantElements = lastRaceDocument.QuerySelectorAll(entrantSelector);
+
+            const String oddsSelector = "span.hr-racing-runner-betting-info";
+            return ScrapeTextContent(entrantElements[position - 1], oddsSelector);
         }
 
         private string ScrapeLastWeight(AngleSharp.Dom.Html.IHtmlDocument lastRaceDocument, int position)
