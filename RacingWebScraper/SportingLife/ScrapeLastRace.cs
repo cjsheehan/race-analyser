@@ -48,7 +48,8 @@ namespace RacingWebScraper
             var lastRaceDocument = parser.Parse(lastRacePage.Result);
             //var lastRaceDocument = await BrowsingContext.New(config).OpenAsync(lastRaceUrl);
 
-            // Get 
+            // Get dat from profile
+
 
 
             // Scrape data
@@ -58,8 +59,22 @@ namespace RacingWebScraper
             lastRace.BeatenLengths = ScrapeBeatenLengths(lastRaceDocument, position);
             lastRace.Weight = ScrapeLastWeight(lastRaceDocument, position);
             lastRace.Odds = ScrapeLastOdds(lastRaceDocument, position);
-            
+            lastRace.WinningTime = ScrapeLastWinningTime(lastRaceDocument);
+            lastRace.Analysis = ScrapeLastAnalysis(lastRaceDocument);
+
             return lastRace;
+        }
+
+        private string ScrapeLastAnalysis(AngleSharp.Dom.Html.IHtmlDocument lastRaceDocument)
+        {
+            const String selector = "div.hr-racing-runner-ride-desc-info";
+            return ScrapeTextContent(lastRaceDocument, selector);
+        }
+
+        private String ScrapeLastWinningTime(IDocument lastRaceDocument)
+        {
+            const String selector = "span.hr-racecard-weighed-in-wt > span";
+            return ScrapeTextContent(lastRaceDocument, selector);
         }
 
         private String ScrapeLastOdds(AngleSharp.Dom.Html.IHtmlDocument lastRaceDocument, int position)
@@ -140,5 +155,8 @@ namespace RacingWebScraper
             const String rx = ".+,(.+)$";
             return ScrapeStringFromTextContent(document, selector, rx);
         }
+
+
+
     }
 }

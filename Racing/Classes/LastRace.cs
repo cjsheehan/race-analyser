@@ -11,7 +11,7 @@ namespace Racing
         public String Distance { get; set; }
         public String Going { get; set; }
         public String WinningTime { get; set; }
-        public Position Position { get; set; }
+        public String Position { get; set; }
         public String Weight { get; set; }
         public double BeatenLengths { get; set; }
         public String SP { get; set; }

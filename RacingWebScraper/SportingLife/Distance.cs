@@ -106,7 +106,7 @@ namespace RacingWebScraper
             {
                 converted = 0.01;
             }
-            else if (distance.Equals("shd"))
+            else if (distance.Equals("shd") || distance.Equals("s.h"))
             {
                 converted = 0.1;
             }

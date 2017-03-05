@@ -30,9 +30,63 @@ namespace RacingWebScraper
             entrant.TrainerName = ScrapeTrainerName(element);
             entrant.TrainerUrl = ScrapeTrainerUrl(element);
             entrant.Odds = ScrapeOdds(element);
-            entrant.LastRace = ScrapeLastRace(entrant.HorseUrl).Result;
-            
+
+
+            // SL: profile only contains races that horse successfully completed
+
+            if (!String.IsNullOrEmpty(entrant.Form))
+            {
+                if(IsLastRaceFinisher(entrant.Form))
+                {
+                    // Finisher
+                    entrant.LastRace = ScrapeLastRace(entrant.HorseUrl).Result;
+                } 
+                else
+                {
+                    // Non-Finisher
+                    entrant.LastRace = new LastRace();
+                    entrant.LastRace.Position = ScrapeLastPositionFromForm(entrant.Form);
+                }
+            }
+
+            else
+            {
+                // No History
+                entrant.LastRace = new LastRace();
+                entrant.LastRace.Position = "No Form";
+            }
+
             return entrant;
+        }
+
+        private String ScrapeLastPositionFromForm(String form)
+        {
+            const String pattern = "(\\S)$";
+            Regex rx = new Regex(pattern);
+            Match m = rx.Match(form);
+            if (m.Success)
+            {
+                return m.Groups[1].Value;
+            }
+            else
+            {
+                return "";
+            }
+        }
+
+        private bool IsLastRaceFinisher(String form)
+        {
+            const String pattern = "\\d$";
+            Regex rx = new Regex(pattern);
+            Match m = rx.Match(form);
+            if(m.Success)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         private String ScrapeTrainerUrl(IElement element)
@@ -65,8 +119,8 @@ namespace RacingWebScraper
         {
             const String selector = "a.hr-racing-runner-form-jockey";
             const String rx = "J:\\s*.+?\\s*(\\d)";
-            var claim =  ScrapeIntFromTextContent(element, selector, rx);
-            if(claim != -1)
+            var claim = ScrapeIntFromTextContent(element, selector, rx);
+            if (claim != -1)
             {
                 return claim;
             }
@@ -86,7 +140,7 @@ namespace RacingWebScraper
             const String rx = "(\\d+)";
             var lastRan = ScrapeIntFromTextContent(element, selector, rx);
 
-            if(lastRan > 0)
+            if (lastRan > 0)
             {
                 return lastRan;
             }
