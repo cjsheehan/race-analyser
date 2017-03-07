@@ -56,6 +56,8 @@
 #                                     1. Excel::Writer::XLSX is now used for writing spreadsheets.     #
 #                                        It supports modern .xlsx formats and better handling of       #
 #                                        formulas.                                                     #
+#               xmlHorseBuilder v1.3: 06/03/17                                                        #
+#                                     1. Handle new XML data from scraper                              #
 ########################################################################################################
 
 use strict;
@@ -70,8 +72,8 @@ use File::Path qw(make_path);
 ########################################################################################################
 my $loc = $ARGV[1];
 my $sheetsLoc = $loc . "/";
-my $version = "v1.2";
-my $debug = 0;
+my $version = "v1.3";
+my $debug = 1;
 my $debugFH;
 my $debugFile = $loc  . "xmlHorseDEBUG.txt";
 my %g_allDates;
@@ -101,11 +103,52 @@ my ($headFormat1, $headFormat2, $entryFormatRight, $strFormatOrangeCB, $entryFor
 my $infoStartRow = 10;
 
 ########################################################################################################
+# XML Keys                                                                                             #
+########################################################################################################
+
+my $RACE = 'Race';
+my $COURSE = 'Course';
+my $DATE = 'Date';
+my $TIME = 'Time';
+my $TITLE = 'Title';
+my $URL = 'Url';
+my $RACE_TYPE = 'Type';
+my $IS_FLAT_RACE = 'Flat';
+my $DISTANCE = 'Distance';
+my $GOING = 'Going';
+my $NUM_RUNNERS = 'NumberOfRunners';
+my $ENTRANTS = 'Entrants';
+my $ENTRANT = 'Entrant';
+my $TRAINER_NAME = 'TrainerName';
+my $TRAINER_URL = 'TrainerUrl';;
+my $JOCKEY_NAME = 'JockeyName';
+my $JOCKEY_CLAIM = 'JockeyClaim';
+my $JOCKEY_URL = 'JockeyUrl';
+my $HORSE_NAME = 'HorseName';
+my $HORSE_URL = 'HorseUrl';
+my $SADDLE_NUM = 'SaddleNumber';
+my $STALL_NUM = 'StallNumber';
+my $AGE = 'Age';
+my $FORM = 'Form';
+my $FORM_WATCH = 'FormWatch';
+my $LAST_RAN = 'LastRan';
+my $WEIGHT = 'Weight';
+my $ODDS = 'Odds';
+my $LAST_RACE = 'LastRace';
+my $WINNING_TIME = 'WinningTime';
+my $BEATEN_LENGTHS = 'BeatenLengths';
+my $ANALYSIS = 'Analysis';
+my $CLASS = 'Class';
+my $RATING = 'OfficialRating';
+my $POSITION = 'Position';
+
+
+########################################################################################################
 #ImportXml                                                                                             #
 ########################################################################################################
 my $parser = new XML::Simple;
 my $data = $parser->XMLin($ARGV[0]); # initialize parser and read the file
-
+	
 if ($debug)
 {
   print $debugFH Dumper( $data );	
@@ -115,9 +158,9 @@ if ($debug)
 # Populate the main race data structure                                                                #
 ########################################################################################################
 
-if(ref($data->{'DTO_Race'}) eq "ARRAY")
+if(ref($data->{$RACE}) eq "ARRAY")
 {
-  $g_Size = $#{ $data->{'DTO_Race'} };
+  $g_Size = $#{ $data->{$RACE} };
 }
 
 for my $i (0..$g_Size)
@@ -125,15 +168,15 @@ for my $i (0..$g_Size)
   my $race;
   if($g_Size == 0)
   {
-    $race = $data->{'DTO_Race'};
+    $race = $data->{$RACE};
   }
   else
   {
-    $race = $data->{'DTO_Race'}[$i];
+    $race = $data->{$RACE}[$i];
   }
   
-  my $date = $race->{'Date'}; 
-  my $course = $race->{'Course'};
+  my $date = $race->{$DATE}; 
+  my $course = $race->{$COURSE};
   push @{ $g_allDates{$date}{$course} }, $race;
 }
 
@@ -145,9 +188,6 @@ if ($debug)
 {
   open($debugFH, '>', $debugFile) or die "Can't open $debugFile for write: $!";
 }
-
-Readonly my $TIME => 'Time';
-Readonly my $DATE => 'Date';
 
 ########################################################################################################
 #main code                                                                                             #
@@ -173,13 +213,13 @@ foreach my $date (keys %g_allDates)
     {
 
       # Check if sheet exists, if not create it          
-      my $sheet = $race->{'Time'} . "_" . $course;
+      my $sheet = $race->{$TIME} . "_" . $course;
       $sheet=~ s/[\:\s+]/_/g; # Replace unsupported characters with underscore
       my $dest_sheet = $dest_book->add_worksheet($sheet); # Add new sheet
 
       # Write the sheet data
       $g_jumps = 0;
-      if($race->{'Type'} ne 'FLAT')
+      if($race->{$RACE_TYPE} ne 'FLAT')
       {
         $g_jumps = 1;
       }
@@ -520,27 +560,27 @@ sub formatDateTime {
 sub writeRaceInfo {
   print "writeRaceInfo\n" if $debug;
   my $dest_sheet_ref = shift;
-  my @raceInfo_keys = qw/Link Track Runners Date Going Dist Class/;
+  my @raceInfos = qw/Link Track Runners Date Going Dist Class/;
   my @raceInfo_headers = qw/Link Meeting Runners Date Info Going Distance/;
   my $row = 0;
   my $col = 1;
 
-  my $course = $g_activeRace->{'Course'};
-  my $url = $g_activeRace->{'Url'};
-  my $raceTxt = $g_activeRace->{'Time'} . "_" . $g_activeRace->{'Course'};
+  my $course = $g_activeRace->{$COURSE};
+  my $url = $g_activeRace->{$URL};
+  my $raceTxt = $g_activeRace->{$TIME} . "_" . $g_activeRace->{$COURSE};
   $$dest_sheet_ref->write_url(($row  ), $col, $url, $raceTxt, $entryFormatUrl);
-  my $runners = $g_activeRace->{'Runners'} . " runners";
+  my $runners = $g_activeRace->{$NUM_RUNNERS} . " runners";
   $$dest_sheet_ref->write(($row+1), $col, $runners);
-  $$dest_sheet_ref->write(($row+2), $col, $g_activeRace->{'Date'});
+  $$dest_sheet_ref->write(($row+2), $col, $g_activeRace->{$DATE});
   $$dest_sheet_ref->write(($row+3), $col, $g_activeRace->{'Info'});
   
-  my $dist = $g_activeRace->{'Dist'};
+  my $dist = $g_activeRace->{$DISTANCE};
   my $convDist = convertDistance($dist);
   my $format = getFormat($convDist, "int",  "yes");			
   $$dest_sheet_ref->write(($row+4), $col, $dist, $strFormatLimeCB);
   $$dest_sheet_ref->write_number(($row+4), ($col+1), $convDist, $format );
   
-  my $going = $g_activeRace->{'Going'};
+  my $going = $g_activeRace->{$GOING};
   my $convGoing = convertGoing($going);
   $format = getFormat($convGoing, "int", "yes");
   my $a = 1 * $convGoing;
@@ -558,8 +598,8 @@ sub writeRaceInfo {
     $$dest_sheet_ref->write_formula(($row+5), ($col+2), $predAvgSpeedFormula, $floatFormatCB);
   } 
   
-  my $class = $g_activeRace->{'Class'};
-  $$dest_sheet_ref->write(($row+6), $col, $class, $entryFormat1) if ref $g_activeRace->{'Class'} ne 'HASH';
+  my $class = $g_activeRace->{$CLASS};
+  $$dest_sheet_ref->write(($row+6), $col, $class, $entryFormat1) if ref $g_activeRace->{$CLASS} ne 'HASH';
  
   my $currency = $g_activeRace->{'Prizes'}{'Currency'};
   my $winPrize = $g_activeRace->{'Prizes'}{'PrizeMoney'}{'decimal'}[0];
@@ -626,203 +666,218 @@ sub writeHorseInfo {
   my $row = $infoStartRow;
   my $col = 0;
   my $info = "";
-  print "writeHorseInfo()\n" if $debug;
-  my $raceSize = $#{$g_activeRace->{'Horses'}{'DTO_Horse'}};
+  my $raceSize = $#{$g_activeRace->{$ENTRANTS}{$ENTRANT}};
+ 
   for my $iHorses ( 0..$raceSize ) 
   {
-    my $horse = $g_activeRace->{'Horses'}{'DTO_Horse'}[$iHorses];
-    my $prevPos = $horse->{'LastRacePos'};
+    my $horse = $g_activeRace->{$ENTRANTS}{$ENTRANT}[$iHorses];  
+    my $prevPos = "";
+    my $prevTrack = 0;
+    my $prevRan = 0;
+    if(ref($horse->{$LAST_RACE}) eq "HASH")
+    {
+        $prevPos = $horse->{$LAST_RACE}{$POSITION};
+        $prevTrack = $horse->{$LAST_RACE}{$COURSE};
+        $prevRan = $horse->{$LAST_RACE}{$NUM_RUNNERS};
+        print "prevTrack " . $prevTrack if $debug;
+    }
+    
     my $prevFullPos = $prevPos; # Take copy as this is now a column entry: 2/11 becomes 2 in the substitution (next line)
     $prevPos =~ s/(\d+)\/\d+/$1/ if $prevPos;
-    my $prevTrack = $horse->{'Track'};
-    my $prevRan = $horse->{'Runners'};
     my $prevExists = 0;
     $prevExists = 1 if $prevTrack || $prevRan || $prevPos;
-    # g_activeRace->{'Horses'}{'DTO_Horse'}[$iHorses]
+    # g_activeRace->{$ENTRANTS}{$ENTRANT}[$iHorses]
     my $comments = "History:\nPlacings:\nRating:\nPrevRace:\n";
     for my $horseKey (keys %{ $horse })
     {
 
       my $localFormat = $strFormatGreenCB;
-      if('Name' eq $horseKey)
+      if($HORSE_NAME eq $horseKey)
       {
-        print "$horse->{'Name'}\n";
-        $$dest_sheet_ref->write_url(($row + 1), ($col), $horse->{'Url'}, $horse->{'Name'}, $entryFormatUrl );
+        $$dest_sheet_ref->write_url(($row + 1), ($col), $horse->{$HORSE_URL}, $horse->{$HORSE_NAME}, $entryFormatUrl );
       }
-      elsif('Trainer' eq $horseKey)
+      elsif($TRAINER_NAME eq $horseKey)
       {
-        $$dest_sheet_ref->write_url(($row + 1), ($col + 6), $horse->{'TrainerUrl'}, $horse->{'Trainer'}, $entryFormatUrl );
+        $$dest_sheet_ref->write_url(($row + 1), ($col + 6), $horse->{$TRAINER_URL}, $horse->{$TRAINER_NAME}, $entryFormatUrl );
       }
-      elsif('Weight' eq $horseKey)
+      elsif($WEIGHT eq $horseKey)
       {
-        my $weight = $horse->{'Weight'};
+        my $weight = $horse->{$WEIGHT};
         $weight =~ s/(\d+-\d+).*/$1/;
         $$dest_sheet_ref->write(($row + 1), ($col + 8), $weight, $entryFormat1);
       }
-      elsif('LastRaceWeight' eq $horseKey)
+      elsif($LAST_RACE eq $horseKey)
       {
-        my $prevWgt = $horse->{'LastRaceWeight'};
-        $prevWgt =~ s/(\d+-\d+).*/$1/;
-        $$dest_sheet_ref->write(($row + 1), ($col + 9), $prevWgt, $entryFormat1);   
-      }
-      elsif('LastRacePos' eq $horseKey)
-      {
-        my $format = getFormat($prevFullPos, "str", "yes");
-        $$dest_sheet_ref->write(($row + 1), ($col + 3), $prevFullPos, $format) if $prevFullPos;
-      } 
-      elsif('LastRaceGoing' eq $horseKey)
-      {
-        my $going = $horse->{'LastRaceGoing'};
-        if($going)
+        print "IN LAST RACE\n";
+        for my $key (keys $horse->{$LAST_RACE})
         {
-          my $convGoing = convertGoing($going);
-          my $format = getFormat($convGoing, "int", "yes");       
-          $$dest_sheet_ref->write(($row + 1), ($col + 17), $going, $entryFormatLeft);
-          $$dest_sheet_ref->write_number((($row + 1), ($col + 18)), $convGoing, $format);
-        }
-        elsif(!$going && $prevExists)
-        {       
-          $going = -1;
-          my $format = getFormat($going, "int", "no"); 
-          $$dest_sheet_ref->write_number((($row + 1), ($col + 18)), $going, $format);
-        }	
-      }
-      elsif('LastRacePrizes' eq $horseKey)
+            print $key . " KEY\n";
+            if($WEIGHT eq $key)
+            {
+                my $prevWgt = $horse->{$LAST_RACE}{$WEIGHT};
+                $prevWgt =~ s/(\d+-\d+).*/$1/;
+                $$dest_sheet_ref->write(($row + 1), ($col + 9), $prevWgt, $entryFormat1);   
+            }
+            elsif($POSITION eq $key)
+            {
+                my $format = getFormat($prevFullPos, "str", "yes");
+                $$dest_sheet_ref->write(($row + 1), ($col + 3), $prevFullPos, $format) if $prevFullPos;
+            } 
+            elsif($GOING eq $key)
+            {
+                my $going = $horse->{$LAST_RACE}{$GOING};
+                if($going)
+                {
+                  my $convGoing = convertGoing($going);
+                  my $format = getFormat($convGoing, "int", "yes");       
+                  $$dest_sheet_ref->write(($row + 1), ($col + 17), $going, $entryFormatLeft);
+                  $$dest_sheet_ref->write_number((($row + 1), ($col + 18)), $convGoing, $format);
+                }
+                elsif(!$going && $prevExists)
+                {       
+                    $going = -1;
+                    my $format = getFormat($going, "int", "no"); 
+                    $$dest_sheet_ref->write_number((($row + 1), ($col + 18)), $going, $format);
+                }	
+            }
+            elsif('LastRacePrizes' eq $key)
+            {
+                my $winCurrency = $horse->{$key}{'Currency'};
+                if($winCurrency ne "UNKNOWN") 
+                {
+                    $$dest_sheet_ref->write(($row + 1), ($col + 4), $winCurrency, $strFormatCB ) if $winCurrency;
+                }
+             
+                my $winPrize = $horse->{$key}{'PrizeMoney'}{'decimal'}[0];
+                $$dest_sheet_ref->write(($row + 1), ($col + 5), $winPrize, $entryFormatRight) if $winPrize;     
+            }
+            elsif($BEATEN_LENGTHS eq $key)
+            {
+                my $format = $entryFormat1;
+                my $prevBeatDist = $horse->{$LAST_RACE}{$BEATEN_LENGTHS};
+                if($prevBeatDist && ref $prevBeatDist ne "HASH" && $prevExists)
+                {
+                    ## valid previous race data available
+                    $prevBeatDist = convertBeatenLengths($prevBeatDist);      
+                    $format = getFormat(1, "float", "yes");
+                }
+                elsif($prevBeatDist && ref $prevBeatDist ne "HASH" && !$prevExists)
+                {
+                    ## unlikely condition, valid distance beaten but no other race data...
+                    $prevBeatDist = convertBeatenLengths($prevBeatDist);
+                    $format = getFormat(1, "float", "yes");
+                }
+                elsif( (!$prevBeatDist || ref $prevBeatDist eq "HASH")  && $prevExists)
+                {
+                    ## possible condition, no distance but other race data exists
+                    if($prevPos && $prevPos == 1)
+                    {
+                        ## 1st place
+                        $prevBeatDist = 0; 
+                        $format = getFormat(1, "float", "yes");
+                    }
+                    elsif($prevPos && $prevPos =~ /^[A-Z]+$/)
+                    {
+                        ## race incident (fell (F), unseated rider (UR) etc) 
+                        $prevBeatDist =  $prevPos;    
+                        $format = getFormat(1, "float", "yes");
+                    }
+                    elsif((!$prevBeatDist || ref $prevBeatDist eq "HASH") && !$prevExists)
+                    {                 
+                      ## No race history
+                      #$format = getFormat(1, "float", "yes"); # send '1" to get a valid format
+                    }  
+                    else
+                    {
+                        ## no distance or position but race data exists, format for error
+                        $prevBeatDist = -1;
+                        $format = getFormat($prevBeatDist, "float", "yes");
+                    }
+                }
+                $$dest_sheet_ref->write((($row + 1), ($col + 13)), $prevBeatDist, $format);
+            }      
+            elsif($ANALYSIS eq $key)
+            {
+                if(ref($horse->{$LAST_RACE}{$ANALYSIS}) ne "HASH")
+                {
+                    $comments =~ s/History:/History:$horse->{$LAST_RACE}{$ANALYSIS}/;
+                }
+            }
+            elsif($CLASS eq $key)
+            {
+                my $prevClass = $horse->{$LAST_RACE}{$CLASS};
+                $$dest_sheet_ref->write(($row + 1), ($col + 10), $prevClass, $entryFormat1) if ref $prevClass ne "HASH"; 
+            }
+            elsif($DISTANCE eq $key)
+            {
+                my $dist = $horse->{$LAST_RACE}{$DISTANCE};
+                my $convDist = convertDistance($dist);
+                my $format = getFormat($convDist, "int", "no");
+                $$dest_sheet_ref->write(($row + 1), ($col + 11), $dist, $entryFormat1);
+                $$dest_sheet_ref->write(($row + 1), ($col + 12), $convDist, $format);
+            }
+            elsif($WINNING_TIME eq $key)
+            {
+                my $convTime;
+                my $winTime = $horse->{$LAST_RACE}{$WINNING_TIME};
+                if($winTime)
+                {
+                    $convTime = convertTime($winTime);
+                    my $format = getFormat($convTime, "float", "no");
+                    $$dest_sheet_ref->write((($row + 1), ($col + 15)), $winTime, $entryFormat1);
+                    $$dest_sheet_ref->write((($row + 1), ($col + 16)), $convTime, $format);
+                }
+                else
+                {
+                    $convTime = -1;
+                    my $format = getFormat($convTime, "float", "yes");
+                    $$dest_sheet_ref->write((($row + 1), ($col + 16)), $convTime, $format);
+                }
+            }               
+            
+        }    
+      }      
+      elsif($JOCKEY_NAME eq $horseKey)
       {
-        my $winCurrency = $horse->{$horseKey}{'Currency'};
-        if($winCurrency ne "UNKNOWN") 
-        {
-          $$dest_sheet_ref->write(($row + 1), ($col + 4), $winCurrency, $strFormatCB ) if $winCurrency;
-        }
-         
-        my $winPrize = $horse->{$horseKey}{'PrizeMoney'}{'decimal'}[0];
-        $$dest_sheet_ref->write(($row + 1), ($col + 5), $winPrize, $entryFormatRight) if $winPrize;     
-      }
-      elsif('LastRaceBeatenLengths' eq $horseKey)
-      {
-        my $format = $entryFormat1;
-        my $prevBeatDist = $horse->{'LastRaceBeatenLengths'};
-        if($prevBeatDist && ref $prevBeatDist ne "HASH" && $prevExists)
-        {
-          ## valid previous race data available
-          $prevBeatDist = convertBeatenLengths($prevBeatDist);      
-          $format = getFormat(1, "float", "yes");
-        }
-        elsif($prevBeatDist && ref $prevBeatDist ne "HASH" && !$prevExists)
-        {
-          ## unlikely condition, valid distance beaten but no other race data...
-          $prevBeatDist = convertBeatenLengths($prevBeatDist);
-          $format = getFormat(1, "float", "yes");
-        }
-        elsif( (!$prevBeatDist || ref $prevBeatDist eq "HASH")  && $prevExists)
-        {
-          ## possible condition, no distance but other race data exists
-          if($prevPos && $prevPos == 1)
-          {
-            ## 1st place
-            $prevBeatDist = 0; 
-            $format = getFormat(1, "float", "yes");
-          }
-          elsif($prevPos && $prevPos =~ /^[A-Z]+$/)
-          {
-            ## race incident (fell (F), unseated rider (UR) etc) 
-            $prevBeatDist =  $prevPos;    
-            $format = getFormat(1, "float", "yes");
-          }
-          else
-          {
-            ## no distance or position but race data exists, format for error
-            $prevBeatDist = -1;
-            $format = getFormat($prevBeatDist, "float", "yes");
-          }
-        }   
-        elsif((!$prevBeatDist || ref $prevBeatDist eq "HASH") && !$prevExists)
-        {                 
-          ## No race history
-          #$format = getFormat(1, "float", "yes"); # send '1" to get a valid format
-        }          
-                           
-        $$dest_sheet_ref->write((($row + 1), ($col + 13)), $prevBeatDist, $format);
-      }
-      elsif('LastRaceAnalysis' eq $horseKey)
-      {
-        if(ref($horse->{'LastRaceAnalysis'}) ne "HASH")
-        {
-          $comments =~ s/History:/History:$horse->{'LastRaceAnalysis'}/;
-        }
-      }
-      elsif('LastRaceClass' eq $horseKey)
-      {
-        my $prevClass = $horse->{'LastRaceClass'};
-        $$dest_sheet_ref->write(($row + 1), ($col + 10), $prevClass, $entryFormat1) if ref $prevClass ne "HASH"; 
-      }
-      elsif('LastRaceDistance' eq $horseKey)
-      {
-        my $dist = $horse->{'LastRaceDistance'};
-        my $convDist = convertDistance($dist);
-        my $format = getFormat($convDist, "int", "no");
-		$$dest_sheet_ref->write(($row + 1), ($col + 11), $dist, $entryFormat1);
-		$$dest_sheet_ref->write(($row + 1), ($col + 12), $convDist, $format);
-      }
-      elsif('LastRaceWinTime' eq $horseKey)
-      {
-        my $convTime;
-        my $winTime = $horse->{'LastRaceWinTime'};
-        if($winTime)
-        {
-          $convTime = convertTime($winTime);
-          my $format = getFormat($convTime, "float", "no");
-          $$dest_sheet_ref->write((($row + 1), ($col + 15)), $winTime, $entryFormat1);
-          $$dest_sheet_ref->write((($row + 1), ($col + 16)), $convTime, $format);
-        }
-        else
-        {
-          $convTime = -1;
-          my $format = getFormat($convTime, "float", "yes");
-          $$dest_sheet_ref->write((($row + 1), ($col + 16)), $convTime, $format);
-        }
-      }
-      elsif('Jockey' eq $horseKey)
-      {
-        if(ref($horse->{'Jockey'}) ne "HASH")
+        if(ref($horse->{$JOCKEY_NAME}) ne "HASH")
         {    
-          my $jockeyPen = $horse->{'JockeyPen'};
+          my $jockeyClaim = $horse->{$JOCKEY_CLAIM};
           my $format = $entryFormatUrl;
           
-          if(ref($jockeyPen) ne "HASH")
+          if(ref($jockeyClaim) ne "HASH")
           {
             ## write_url format was getting screwed up when combined with my formats, therefore had to call write_url in this branching if..elsif where format is only applied if there is a jockey penalty
-            if($jockeyPen eq 3)
+            if($jockeyClaim eq 3)
             {
               $format = $entryFormatUrlOrangeBg;
             }
-            elsif($jockeyPen eq 7)
+            elsif($jockeyClaim eq 7)
             {
               $format = $entryFormatUrlRedBg;
             }
           }           
-          $$dest_sheet_ref->write_url(($row + 1), ($col + 7), $horse->{'JockeyUrl'}, $horse->{'Jockey'}, $format);
+          $$dest_sheet_ref->write_url(($row + 1), ($col + 7), $horse->{$JOCKEY_URL}, $horse->{$JOCKEY_NAME}, $format);
         }
       }
-      elsif('Placings' eq $horseKey)
+      elsif($FORM eq $horseKey)
       {
-        if(ref($horse->{'Placings'}) ne "HASH")
+        if(ref($horse->{$FORM}) ne "HASH")
         {
-          $comments =~ s/Placings:/Placings:$horse->{'Placings'}/;
+          $comments =~ s/Placings:/Placings:$horse->{$FORM}/;
         }
       }
-      elsif('Rating' eq $horseKey)
+      elsif($RATING eq $horseKey)
       {
-        if(ref($g_activeRace->{'Horses'}{'Horse'}[$iHorses]{'Rating'}) ne "HASH")
+        if(ref($horse->{$RATING}) ne "HASH")
         {
-          $comments =~ s/Rating:/Rating:$horse->{'Rating'}/;
+          $comments =~ s/Rating:/Rating:$horse->{$RATING}/;
         }
       }
-      elsif('Comment' eq $horseKey)
+      elsif($FORM_WATCH eq $horseKey)
       {
-        if(ref($horse->{'Hist'}) ne "HASH")
+        if(ref($horse->{$FORM_WATCH}) ne "HASH")
         {
-          $comments =~ s/History:/History:$horse->{'Hist'}/;
+          $comments =~ s/History:/History:$horse->{$FORM_WATCH}/;
         }
       }
       
