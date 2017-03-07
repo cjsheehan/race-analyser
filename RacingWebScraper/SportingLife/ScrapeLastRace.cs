@@ -12,7 +12,7 @@ namespace RacingWebScraper
 {
     public partial class SLifeRacingScraper
     {
-        async Task<LastRace> ScrapeLastRace(String horseUrl)
+        async Task<LastRace> ScrapeLastRace(String horseUrl, String horseName)
         {
             // Get horse profile page
             var profileDocument = await WebPage.GetDocumentAsync(horseUrl).ConfigureAwait(false);
@@ -29,18 +29,43 @@ namespace RacingWebScraper
 
             // Scrape data
             LastRace lastRace = new LastRace();
+            if (!IsWeighedIn(lastRaceDocument)) return lastRace;
             lastRace.Distance = ScrapeLastDistance(lastRaceDocument);
             lastRace.Going = ScrapeLastGoing(lastRaceDocument);
             lastRace.Course = ScrapeLastCourse(lastRaceDocument);
-            lastRace.BeatenLengths = ScrapeBeatenLengths(lastRaceDocument, position);
+            Console.WriteLine("Scraping beaten for " + horseName);
+            try
+            {
+
+            	lastRace.BeatenLengths = ScrapeBeatenLengths(lastRaceDocument, position);
+            }
+            catch (System.Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                lastRace.BeatenLengths = -1;
+            }
             lastRace.Weight = ScrapeLastWeight(lastRaceDocument, position);
             lastRace.Odds = ScrapeLastOdds(lastRaceDocument, position);
             lastRace.WinningTime = ScrapeLastWinningTime(lastRaceDocument);
             lastRace.Analysis = ScrapeLastAnalysis(lastRaceDocument);
             lastRace.Class = lastClass;
             lastRace.Position = positionInField;
-
+            Console.WriteLine("FINISHED WITH lastrace " + horseName);
             return lastRace;
+        }
+
+        private bool IsWeighedIn(IDocument lastRaceDocument)
+        {
+            const String selector = "div.hr-racecard-weighed-in-wrapper";
+            var element = ScrapeTextContent(lastRaceDocument, selector);
+            if(!String.IsNullOrEmpty(element))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         private String ScrapeLastClass(IDocument lastRaceDocument)
@@ -94,17 +119,24 @@ namespace RacingWebScraper
 
             const String entrantSelector = "div.hr-racing-runner-position-container";
             var entrantElements = lastRaceDocument.QuerySelectorAll(entrantSelector);
-
-            //const String beatenLengthsSelector = "div.hr-racing-runner-space-from-winner";
-            
-
+            if(entrantElements.Length == 0) return -1;
 
             // Get the individual finishing distances between runners
             double sumDistance = 0.0;
-            IEnumerable<double[]> entrantDistances = entrantElements.Skip(1).Select(e => 
+            IEnumerable<double[]> entrantDistances = entrantElements.Skip(1).Take(position - 1).Select(e => 
             {
+                
+                if(IsNonRunner(e))
+                {
+                    return new double [] {-1, -1};
+                }
+
                 const String select = "div.hr-racing-runner-space-from-winner";
                 var textContent = ScrapeTextContent(e, select);
+                if (String.IsNullOrEmpty(textContent))
+                {
+                    return new double[] { -1, -1 };
+                }
 
                 double currentDistance = 0.0;
                 try
@@ -120,11 +152,30 @@ namespace RacingWebScraper
             });
             var entrantDistancesList = entrantDistances.ToList();
 
+            if (entrantDistancesList.Count  == 0) return -1;
+
             // min position value = 2
+            Console.WriteLine("Position " + position + " " + entrantDistancesList.Count);
             var beatenLengths = entrantDistancesList[position - 2][1];
 
 
             return beatenLengths;
+        }
+
+        private bool IsNonRunner(IElement element)
+        {
+            const String select = "span.hr-racing-nonrunner-position-no";
+            var textContent = ScrapeTextContent(element, select);
+            if(!String.IsNullOrEmpty(textContent))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+
+
         }
 
         String ScrapeLastPositionInField(IElement element)

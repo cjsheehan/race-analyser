@@ -25,5 +25,11 @@ namespace Racing
         public PrizeList LastRacePrizes { get; set; }
 
         public string Odds { get; set; }
+
+        public LastRace()
+        {
+            BeatenLengths = -1;
+            Position = "UNKNOWN";
+        }
     }
 }

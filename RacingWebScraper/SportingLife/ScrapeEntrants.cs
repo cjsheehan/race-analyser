@@ -52,7 +52,7 @@ namespace RacingWebScraper
 
                 if (isValid)
                 {
-                    entrant.LastRace = await ScrapeLastRace(entrant.HorseUrl).ConfigureAwait(false);
+                    entrant.LastRace = await ScrapeLastRace(entrant.HorseUrl, entrant.HorseName).ConfigureAwait(false);
                 }
                 else
                 {
@@ -91,19 +91,7 @@ namespace RacingWebScraper
             // Get date of last race from profile
             const String dateSelector = "table.horse-results-table > tbody > tr:nth-child(1) > td:nth-child(1) > a";
             String lastRaceDateOnProfile = ScrapeTextContent(profileDocument, dateSelector);
-            if(String.IsNullOrEmpty(lastRaceDateOnProfile))
-            {
-                Console.WriteLine("No last race date on profile");
-                return false;
-            }
-            var lastRaceDateElement = profileDocument.QuerySelector(dateSelector);
-
-            // Get page for last race
-            const String lastRaceUrlSelector = "td:nth-child(1) > a.hr-racing-form-racecard-link";
-            var lastRaceUrl = SITE_PREFIX + ScrapeUrl(profileDocument, lastRaceUrlSelector);
-            var lastRaceDocument = await WebPage.GetDocumentAsync(lastRaceUrl).ConfigureAwait(false);
-            if (lastRaceDocument == null) return false;
-
+            if (String.IsNullOrEmpty(lastRaceDateOnProfile)) return false;
 
             // Get last ran value from racecard element
             int lastRan = ScrapeHorseLastRan(element);
