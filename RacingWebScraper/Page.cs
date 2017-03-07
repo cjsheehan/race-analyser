@@ -5,6 +5,8 @@ using System.Text;
 using System.Net;
 using System.IO;
 using System.Threading.Tasks;
+using AngleSharp.Parser.Html;
+using AngleSharp;
 
 namespace RacingWebScraper
 {
@@ -23,7 +25,9 @@ namespace RacingWebScraper
             if (String.IsNullOrWhiteSpace(uri)) throw new ArgumentNullException("String uri cannot be empty or null");
             System.Net.Http.HttpClient client = new System.Net.Http.HttpClient();
             string page = await client.GetStringAsync(uri).ConfigureAwait(false);
-            return new AngleSharp.Parser.Html.HtmlParser().Parse(page);
+            return await new HtmlParser().ParseAsync(page).ConfigureAwait(false);
+            //var config = Configuration.Default.WithDefaultLoader();
+            //return await BrowsingContext.New(config).OpenAsync(uri).ConfigureAwait(false);
         }
 
         public static string Get(string uri)

@@ -79,62 +79,7 @@ namespace RacingWebScraper
                 entrants.Add(entrantOut);
             }
 
-
             return entrants;
-
-            //foreach (var element in entrantsElements)
-            //{
-            //    var entrant = new Entrant();
-            //    entrant.SaddleNumber = ScrapeSaddleNumber(element);
-            //    entrant.StallNumber = ScrapeStallNumber(element);
-            //    entrant.HorseUrl = ScrapeHorseUrl(element);
-            //    entrant.HorseName = ScrapeHorseName(element);
-            //    entrant.Age = ScrapeHorseAge(element);
-            //    entrant.Rating = ScrapeHorseOfficialRating(element);
-            //    entrant.Form = ScrapeHorseForm(element);
-            //    entrant.FormWatch = ScrapeHorseFormWatch(element);
-            //    entrant.LastRan = ScrapeHorseLastRan(element);
-            //    entrant.Weight = ScrapeHorseWeight(element);
-            //    entrant.JockeyName = ScrapeJockeyName(element);
-            //    entrant.JockeyUrl = ScrapeJockeyUrl(element);
-            //    entrant.JockeyClaim = ScrapeJockeyClaim(element);
-            //    entrant.TrainerName = ScrapeTrainerName(element);
-            //    entrant.TrainerUrl = ScrapeTrainerUrl(element);
-            //    entrant.Odds = ScrapeOdds(element);
-
-            //    // Test whether profile contains valid last ran data
-            //    // SL: only displays races where runner finished race.
-            //    // Therefore needs compared to last ran days from racecard
-            //    var isValid = await IsLastRanDataValidAsync(element);
-
-            //    if(isValid)
-            //    {
-            //        entrant.LastRace = ScrapeLastRace(entrant.HorseUrl);
-            //    }
-            //    else 
-            //    {
-            //        if (!String.IsNullOrEmpty(entrant.Form))
-            //        {
-            //            entrant.LastRace = new LastRace();
-            //            entrant.LastRace.Position = ScrapeLastPositionFromForm(entrant.Form);
-            //        }
-            //        else
-            //        {
-            //            entrant.LastRace = new LastRace();
-            //            entrant.LastRace.Position = "No Form";
-            //        }
-            //    }
-
-            //    entrants.Add(entrant);
-            //}
-
-            //var entrants = new List<Entrant>();
-            //Entrant entrantOut;
-            //while (parallelEntrants.TryDequeue(out entrantOut))
-            //{
-            //    entrants.Add(entrantOut);
-            //}
-
         }
 
         async Task<bool> IsLastRanDataValidAsync(IElement element)
@@ -146,12 +91,18 @@ namespace RacingWebScraper
             // Get date of last race from profile
             const String dateSelector = "table.horse-results-table > tbody > tr:nth-child(1) > td:nth-child(1) > a";
             String lastRaceDateOnProfile = ScrapeTextContent(profileDocument, dateSelector);
-            var selected = profileDocument.QuerySelector(dateSelector);
+            if(String.IsNullOrEmpty(lastRaceDateOnProfile))
+            {
+                Console.WriteLine("No last race date on profile");
+                return false;
+            }
+            var lastRaceDateElement = profileDocument.QuerySelector(dateSelector);
 
             // Get page for last race
             const String lastRaceUrlSelector = "td:nth-child(1) > a.hr-racing-form-racecard-link";
             var lastRaceUrl = SITE_PREFIX + ScrapeUrl(profileDocument, lastRaceUrlSelector);
             var lastRaceDocument = await WebPage.GetDocumentAsync(lastRaceUrl).ConfigureAwait(false);
+            if (lastRaceDocument == null) return false;
 
 
             // Get last ran value from racecard element

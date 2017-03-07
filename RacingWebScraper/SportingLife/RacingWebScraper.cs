@@ -77,12 +77,6 @@ namespace RacingWebScraper
                     headers = new List<IRaceHeader>();
                     String date = String.Format("{0:yyyy-MM-dd}", dt);
                     String uri = ROOT_CARDS_URI + date;
-
-
-
-
-                    //var config = Configuration.Default.WithDefaultLoader();
-                    //var document = await BrowsingContext.New(config).OpenAsync(uri);
                     var document = await WebPage.GetDocumentAsync(uri).ConfigureAwait(false);
                     var meetings = document.QuerySelectorAll(meetingSelector);
 
@@ -159,11 +153,6 @@ namespace RacingWebScraper
             try
             {
                 races = await ScrapeRacesAsync(raceData).ConfigureAwait(false);
-                //races = await Task.Run<List<Race>>(() =>
-                //{
-                //    var racesScraped = await ScrapeRacesAsync(raceData).ConfigureAwait(false);
-                //    return racesScraped;
-                //}).ConfigureAwait(false);
             }
             catch (System.Exception)
             {
