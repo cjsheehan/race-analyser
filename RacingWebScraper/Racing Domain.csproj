@@ -66,7 +66,7 @@
     <Compile Include="SportingLife\Distance.cs" />
     <Compile Include="SportingLife\RacingWebScraper.cs" />
     <Compile Include="SportingLife\RXSL.cs" />
-    <Compile Include="SportingLife\ScrapeEntrant.cs" />
+    <Compile Include="SportingLife\ScrapeEntrants.cs" />
     <Compile Include="SportingLife\ScrapeLastRace.cs" />
     <Compile Include="SportingLife\ScrapeRaces.cs" />
     <Compile Include="SportingLife\ScrapeUtil.cs" />

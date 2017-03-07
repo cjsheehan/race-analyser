@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace RacingWebScraper
 {
+    [Serializable]
     public class InvalidScrapeException : Exception
     {
         public InvalidScrapeException()

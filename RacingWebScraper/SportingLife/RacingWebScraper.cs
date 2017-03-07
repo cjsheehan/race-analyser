@@ -7,12 +7,14 @@ using System.Text.RegularExpressions;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using AngleSharp;
+using AngleSharp.Parser.Html;
 
 namespace RacingWebScraper
 {
     public partial class SLifeRacingScraper : IRacingScraper
     {
-        public List<IRaceHeader> Headers 
+
+        public List<IRaceHeader> Headers
         {
             get
             {
@@ -47,7 +49,7 @@ namespace RacingWebScraper
 
         public SLifeRacingScraper(INotify ntf)
         {
-            if(ntf == null) throw new ArgumentNullException("INotify is null in SLifeRacingScraper constructor");
+            if (ntf == null) throw new ArgumentNullException("INotify is null in SLifeRacingScraper constructor");
             _ntf = ntf;
         }
 
@@ -67,19 +69,23 @@ namespace RacingWebScraper
             {
                 _isRunning = true;
                 availHeaders = await Task.Run<List<IRaceHeader>>(async () =>
-	            {
-	                progress.Report(new BasicUpdate(MIN_PROGRESS, ""));
-	                progress.Report(new BasicUpdate(WORK_STARTED_PROGRESS, "Getting Meetings..."));
-	
-	                List<IRaceHeader> headers = null;
-	                headers = new List<IRaceHeader>();
-	                String date = String.Format("{0:yyyy-MM-dd}", dt);
-	                String uri = ROOT_CARDS_URI + date;
-	
-                    var config = Configuration.Default.WithDefaultLoader();
-                    var document = await BrowsingContext.New(config).OpenAsync(uri);
+                {
+                    progress.Report(new BasicUpdate(MIN_PROGRESS, ""));
+                    progress.Report(new BasicUpdate(WORK_STARTED_PROGRESS, "Getting Meetings..."));
+
+                    List<IRaceHeader> headers = null;
+                    headers = new List<IRaceHeader>();
+                    String date = String.Format("{0:yyyy-MM-dd}", dt);
+                    String uri = ROOT_CARDS_URI + date;
+
+
+
+
+                    //var config = Configuration.Default.WithDefaultLoader();
+                    //var document = await BrowsingContext.New(config).OpenAsync(uri);
+                    var document = await WebPage.GetDocumentAsync(uri).ConfigureAwait(false);
                     var meetings = document.QuerySelectorAll(meetingSelector);
-	                
+
                     double currentProgress = 0;
                     double inc = 0;
                     if (meetings.Length > 0)
@@ -87,14 +93,14 @@ namespace RacingWebScraper
                         inc = 100 / meetings.Length;
                     }
 
-                    foreach(var meeting in meetings)
+                    foreach (var meeting in meetings)
                     {
                         int id = 0;
                         var course = meeting.QuerySelector(courseSelector).TextContent; // div.dividerRow > h2
                         var going = meeting.QuerySelector(goingSelector).TextContent;
                         var races = meeting.QuerySelectorAll(raceSelector);
 
-                        foreach(var race in races)
+                        foreach (var race in races)
                         {
                             String rxRacename = "\\s*\\(.*\\)";
                             var title = race.QuerySelector(racenameSelector).TextContent;
@@ -112,7 +118,7 @@ namespace RacingWebScraper
                             else
                                 type = RaceType.FLAT;
 
-                            IRaceHeader header = new RaceHeader(id, course, date, time, title, info, url, type);
+                            IRaceHeader header = new RaceHeader(id, course, going, date, time, title, info, url, type);
                             headers.Add(header);
 
                         }
@@ -122,7 +128,7 @@ namespace RacingWebScraper
 
                     progress.Report(new BasicUpdate(MAX_PROGRESS, "completed."));
                     return headers;
-                });
+                }).ConfigureAwait(false);
             }
             catch (System.Exception)
             {
@@ -134,12 +140,12 @@ namespace RacingWebScraper
             return availHeaders;
         }
 
-        public async Task<List<Race>> GetRaceDataAsync(List<String> urls, IProgress<BasicUpdate> progress)
+        public async Task<List<Race>> GetRaceDataAsync(List<Dictionary<String, String>> raceData, IProgress<BasicUpdate> progress)
         {
-            if (urls == null) throw new ArgumentNullException("urls cannot be null");
-            if (progress == null) throw new ArgumentNullException("progress cannot be null");
+            if (raceData == null) throw new ArgumentNullException("raceData is be null");
+            if (progress == null) throw new ArgumentNullException("progress is be null");
 
-             _progress = progress;
+            _progress = progress;
 
             if (_isRunning)
             {
@@ -152,11 +158,12 @@ namespace RacingWebScraper
 
             try
             {
-                races = await Task.Run<List<Race>>(async () =>
-                {
-                    var racesScraped = await ScrapeRacesAsync(urls);
-                    return racesScraped;
-                });
+                races = await ScrapeRacesAsync(raceData).ConfigureAwait(false);
+                //races = await Task.Run<List<Race>>(() =>
+                //{
+                //    var racesScraped = await ScrapeRacesAsync(raceData).ConfigureAwait(false);
+                //    return racesScraped;
+                //}).ConfigureAwait(false);
             }
             catch (System.Exception)
             {
@@ -176,7 +183,7 @@ namespace RacingWebScraper
 
         private void ProcessedHorse(String name)
         {
-            
+
         }
 
         private String PreFormatPage(String page)

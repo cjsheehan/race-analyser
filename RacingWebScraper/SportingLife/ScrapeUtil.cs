@@ -67,7 +67,7 @@ namespace RacingWebScraper
 
             return -1;
         }
-
+        // #content > div > div > div > div.main-layout-left-column > div.main-layout-block.main-layout-order-desktop-1.main-layout-order-handheld-1 > div > div.horseProfile-results > div > table > tbody > tr:nth-child(1) > td:nth-child(5)
         private String ScrapeStringFromTextContent(IDocument document, String selector, String rxCapture)
         {
             var textContent = ScrapeTextContent(document, selector);
@@ -79,6 +79,7 @@ namespace RacingWebScraper
                 {
                     return match.Groups[1].Value;
                 }
+                
             }
 
             return "";

@@ -1,6 +1,7 @@
 ﻿using AngleSharp;
 using AngleSharp.Dom;
 using AngleSharp.Dom.Html;
+using AngleSharp.Parser.Html;
 using Racing;
 using System;
 using System.Collections.Concurrent;
@@ -55,48 +56,56 @@ namespace RacingWebScraper
             }
         }
 
-        private async Task<List<Race>> ScrapeRacesAsync(List<String> raceUrls)
+        private async Task<List<Race>> ScrapeRacesAsync(List<Dictionary<String, String>> raceData)
         {
             List<Race> races = new List<Race>();
             double currentProgress = 0;
-            double inc = 100 / raceUrls.Count;
+            double inc = 100 / raceData.Count;
             _progress.Report(new BasicUpdate(MIN_PROGRESS, ""));
-            foreach (var url in raceUrls)
+
+            //var tasks = raceData.Select(async stringMap =>
+            //{
+            //    _progress.Report(new BasicUpdate((int)currentProgress, string.Format("attempting scrape : {0} : {1}", stringMap["course"], stringMap["time"])));
+            //    var document = await WebPage.GetDocumentAsync(stringMap["url"]).ConfigureAwait(false);
+            //    _currentRace = stringMap["url"];
+            //    Console.WriteLine("Current Race " + _currentRace);
+            //    var race = await ScrapeRaceDetail(document, stringMap);
+            //    races.Add(race);
+            //    currentProgress += inc;
+            //    //_progress.Report(new BasicUpdate((int)currentProgress, string.Format("scraped race : {0} : {1}", stringMap["course"], stringMap["time"])));
+            //});
+            //await Task.WhenAll(tasks).ConfigureAwait(false);
+            //return races;
+
+            foreach (var stringMap in raceData)
             {
-                var config = Configuration.Default.WithDefaultLoader();
-                var document = await BrowsingContext.New(config).OpenAsync(url);
-                var test = document.QuerySelectorAll("ul");
-                var race = ScrapeRaceDetail(document);
-                var runners = ScrapeRunnersParallel(document);
-                //racesDetail.Add(raceData);
+                var document = await WebPage.GetDocumentAsync(stringMap["url"]).ConfigureAwait(false);
+                _currentRace = stringMap["url"];
+                Console.WriteLine("Current Race " + _currentRace);
+                log.Debug("Current Race " + _currentRace);
+                var race = await ScrapeRaceDetail(document, stringMap).ConfigureAwait(false);
+                races.Add(race);
                 currentProgress += inc;
+                _progress.Report(new BasicUpdate((int)currentProgress, string.Format("scraped race : {0} : {1}", stringMap["course"], stringMap["time"])));
             }
             _progress.Report(new BasicUpdate(MAX_PROGRESS, "Completed."));
             return races;
         }
 
-        private async Task<Race> ScrapeRaceDetail(IDocument document)
+        async Task<Race> ScrapeRaceDetail(IDocument document, Dictionary<String, String> raceData)
         {
             Race race = new Race();
-            race.Dist = ScrapeDistance(document);
+            race.Course = raceData["course"];
+            race.Going = raceData["going"];
+            race.Date = raceData["date"];
+            //race.Class = raceData["class"];
+            race.Time = raceData["time"];
+            race.Url = raceData["url"];
+            race.Distance = ScrapeDistance(document);
             race.Title = ScrapeRaceTitle(document);
             race.NumberOfRunners = ScrapeNumberOfRunners(document);
-            const String entrantsSelector = "section.hr-racing-runner-wrapper";
-            var entrantsElements = document.QuerySelectorAll(entrantsSelector);
-            var entrants = new List<Entrant>();
-            foreach (var element in entrantsElements)
-            {
-                Entrant entrant = ScrapeEntrant(element);
-                if (entrant != null)
-                {
-                    entrants.Add(entrant);
-                }
-                else
-                {
-                    log.Error("Failed to scrape entrant from:" + document.Url);
-                }
-            }
-
+            race.Entrants = await ScrapeEntrantsAsync(document).ConfigureAwait(false);
+            Console.WriteLine("Finished Entrants" + race.Course + race.Time);
             return race;
         }
 
@@ -212,7 +221,46 @@ namespace RacingWebScraper
             return horseData;
         }
 
-        private List<String> ScrapeRunnersParallel(IDocument document)
+        //async Task<List<Entrant>> ScrapeRunnersParallel(IDocument document)
+        //{
+        //    const String runnerSelector = "div.hr-racing-runner-key-info-container";
+        //    var runners = document.QuerySelectorAll(runnerSelector);
+
+        //    if (runners == null | runners.Length == 0)
+        //    {
+        //        String msg = "no runners found";
+        //        log.Error(msg);
+        //        throw new InvalidScrapeException(msg);
+        //    }
+
+        //    InitProgressHandler(runners.Length);
+        //    ConcurrentQueue<String> parallelHorses = new ConcurrentQueue<String>();
+        //    Parallel.ForEach(runners, currentRunner =>
+        //    {
+        //        if (currentRunner != null)
+        //        {
+        //            String horseName = ScrapeRunnerName(currentRunner);
+        //            parallelHorses.Enqueue(horseName);
+        //            //ScrapeHorseCompleted(horseName);
+        //        }
+        //        else
+        //        {
+        //            _ntf.Notify("No Horse data to scrape", Ntf.WARNING);
+        //        }
+
+        //    });
+
+        //    List<String> horses = new List<String>();
+        //    String horseOut;
+        //    while (parallelHorses.TryDequeue(out horseOut))
+        //    {
+        //        horses.Add(horseOut);
+        //    }
+
+        //    return horses;
+        //}
+
+        private List<String> ScrapeRunners(IDocument document)
         {
             const String runnerSelector = "div.hr-racing-runner-key-info-container";
             var runners = document.QuerySelectorAll(runnerSelector);
@@ -232,7 +280,7 @@ namespace RacingWebScraper
                 {
                     String horseName = ScrapeRunnerName(currentRunner);
                     parallelHorses.Enqueue(horseName);
-                    ScrapeHorseCompleted(horseName);
+                    //ScrapeHorseCompleted(horseName);
                 }
                 else
                 {
@@ -260,11 +308,8 @@ namespace RacingWebScraper
 
         private void ScrapeHorseCompleted(string horseName)
         {
-            lock (_safeLock) // This lock may not be needed as it only does a write
-            {
-                _currentProg += _progInc;
-                _progress.Report(new BasicUpdate((int)_currentProg, String.Format("{0} : {1}", _currentRace, horseName)));
-            }
+            _currentProg += _progInc;
+            _progress.Report(new BasicUpdate((int)_currentProg, String.Format("{0} : {1}", _currentRace, horseName)));
         }
 
         private string ExtractClass(String[] items)

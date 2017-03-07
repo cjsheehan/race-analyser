@@ -128,18 +128,27 @@ namespace RacingWebScraper
         public async Task GetRaceDataAsync(IProgress<BasicUpdate> progress)
         {
             CurrentTaskProgress = 0; // TODO : Remove old progress impl
-            List<String> raceUrls = new List<String>();
+            List<Dictionary<String, String>> allRacesData = new List<Dictionary<string, string>>();
+            //race.Course = raceData["course"];
+            //race.Class = raceData["class"];
+            //race.Time = raceData["time"];
+            //race.Url = raceData["url"];
             foreach (IRaceHeader race in _raceHeaders)
             {
                 if (race.Selected == true)
                 {
-                    raceUrls.Add(race.Url);
+                    var raceData = new Dictionary<string,string>();
+                    raceData.Add("url", race.Url);
+                    raceData.Add("going", race.Going);
+                    raceData.Add("course", race.Course);
+                    raceData.Add("time", race.Time);
+                    raceData.Add("date", race.Date);
+                    allRacesData.Add(raceData);
                 }
             }
-
-            if (raceUrls.Count > 0)
+            if (allRacesData.Count > 0)
             {
-                var races = await _scraper.GetRaceDataAsync(raceUrls, progress);
+                var races = await _scraper.GetRaceDataAsync(allRacesData, progress).ConfigureAwait(false);
                 _scrapedRaces.Clear();
                 foreach (var race in races)
                 {

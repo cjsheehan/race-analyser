@@ -49,16 +49,16 @@ namespace Racing
         public uint? MaxAge { get; set; }
         public PrizeList Prizes { get; set; }
         public bool Flat { get; set; }
-        public string Dist { get; set; }
+        public string Distance { get; set; }
         public uint TotalYds { get; set; }
         public string Going { get; set; }
         public Going Egoing { get; set; }
         public string Class { get; set; }
         public int NumberOfRunners { get; set; }
-        public List<Entrant> Horses { get; set; }
+        public List<Entrant> Entrants { get; set; }
         public Race()
         {
-            Horses = new List<Entrant>();
+            Entrants = new List<Entrant>();
             Prizes = new PrizeList();
             MinAge = 0;
             MaxAge = 0;
@@ -80,7 +80,7 @@ namespace Racing
                 + "Prizes :" + string.Join(",", Prizes) + Environment.NewLine + "\t\t"
                 + "Date :" + Date + Environment.NewLine + "\t\t"
                 + "Flat :" + Flat + Environment.NewLine + "\t\t"
-                + "Dist :" + Dist + Environment.NewLine + "\t\t"
+                + "Dist :" + Distance + Environment.NewLine + "\t\t"
                 + "TotalYds :" + TotalYds + Environment.NewLine + "\t\t"
                 + "Going :" + Egoing + Environment.NewLine + "\t\t"
                 + "Class :" + Class + Environment.NewLine + "\t\t"
@@ -101,6 +101,7 @@ namespace Racing
 
         public int Id { get; private set; }
         public string Course { get; private set; }
+        public string Going { get; private set; }
         public string Date { get; private set; }
         public string Time { get; private set; }
         public string Title { get; private set; }
@@ -137,10 +138,11 @@ namespace Racing
             }
         }
 
-        public RaceHeader(int id, string course, string date, string time, string title, string info, string url, RaceType type)
+        public RaceHeader(int id, string course, string going, string date, string time, string title, string info, string url, RaceType type)
         {
             Id = id;
             Course = course;
+            Going = going;
             Date = date;
             Time = time;
             Title = title;

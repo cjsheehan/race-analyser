@@ -33,6 +33,7 @@ namespace Racing
     {
         int Id { get; }
         string Course { get; }
+        string Going { get; }
         string Date { get; }
         string Time { get; }
         string Title { get; }

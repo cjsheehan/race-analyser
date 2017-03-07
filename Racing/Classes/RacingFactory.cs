@@ -26,12 +26,12 @@ namespace Racing
             race.MinAge = details.MaxOR;
             race.MaxAge = details.MaxOR;
             race.Prizes  = details.Prizes;
-            race.Dist  = details.Dist;
+            race.Distance  = details.Dist;
             race.TotalYds = details.TotalYds;
             race.Going = details.Going; 
             race.Class = details.Class;
             race.NumberOfRunners  = details.Runners;
-            race.Horses = details.Horses;
+            race.Entrants = details.Horses;
         }
 
         public static void  CreateRaceDTO(IRace raceIn, ref DTO_Race raceOut)

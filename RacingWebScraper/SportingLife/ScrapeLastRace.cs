@@ -12,60 +12,52 @@ namespace RacingWebScraper
 {
     public partial class SLifeRacingScraper
     {
-
-        //public String Distance { get; set; }
-        //public String Going { get; set; }
-        //public String WinTime { get; set; }
-        //public int Pos { get; set; }
-        //public String Weight { get; set; }
-        //public String BeatenLengths { get; set; }
-        //public String SP { get; set; }
-        //public String Trainer { get; set; }
-        //public String Jockey { get; set; }
-        //public String Url { get; set; }
-        //public String Analysis { get; set; }
-        //public String Course { get; set; }
-        //public String Class { get; set; }
-        //public int NumRunners { get; set; }
-        //public PrizeList LastRacePrizes { get; set; }
-
         async Task<LastRace> ScrapeLastRace(String horseUrl)
         {
             // Get horse profile page
-            var config = Configuration.Default.WithDefaultLoader();
-            var profilePage = WebPage.GetAsync(horseUrl);
-            var parser = new HtmlParser();
-            var profileDoc = parser.Parse(profilePage.Result);
+            var profileDocument = await WebPage.GetDocumentAsync(horseUrl).ConfigureAwait(false);
     
-            //var profileDoc = BrowsingContext.New(config).OpenAsync(horseUrl).Result;
             // Get required data from profile
-            var position = ScrapeLastPosition(profileDoc.DocumentElement);
+            var positionInField = ScrapeLastPositionInField(profileDocument.DocumentElement);
+            var position = ScrapeLastPosition(profileDocument.DocumentElement);
+            var lastClass = ScrapeLastClass(profileDocument);
 
             // Get page for last race
             const String lastRaceUrlSelector = "td:nth-child(1) > a.hr-racing-form-racecard-link";
-            var lastRaceUrl = SITE_PREFIX + ScrapeUrl(profileDoc, lastRaceUrlSelector);
-            var lastRacePage = WebPage.GetAsync(lastRaceUrl);
-            var lastRaceDocument = parser.Parse(lastRacePage.Result);
-            //var lastRaceDocument = await BrowsingContext.New(config).OpenAsync(lastRaceUrl);
-
-            // Get dat from profile
-
-
+            var lastRaceUrl = SITE_PREFIX + ScrapeUrl(profileDocument, lastRaceUrlSelector);
+            var lastRaceDocument = await WebPage.GetDocumentAsync(lastRaceUrl).ConfigureAwait(false);
 
             // Scrape data
             LastRace lastRace = new LastRace();
             lastRace.Distance = ScrapeLastDistance(lastRaceDocument);
             lastRace.Going = ScrapeLastGoing(lastRaceDocument);
+            lastRace.Course = ScrapeLastCourse(lastRaceDocument);
             lastRace.BeatenLengths = ScrapeBeatenLengths(lastRaceDocument, position);
             lastRace.Weight = ScrapeLastWeight(lastRaceDocument, position);
             lastRace.Odds = ScrapeLastOdds(lastRaceDocument, position);
             lastRace.WinningTime = ScrapeLastWinningTime(lastRaceDocument);
             lastRace.Analysis = ScrapeLastAnalysis(lastRaceDocument);
+            lastRace.Class = lastClass;
+            lastRace.Position = positionInField;
 
             return lastRace;
         }
 
-        private string ScrapeLastAnalysis(AngleSharp.Dom.Html.IHtmlDocument lastRaceDocument)
+        private String ScrapeLastClass(IDocument lastRaceDocument)
+        {
+            const String selector = "table.horse-results-table > tbody > tr:nth-child(1) > td:nth-child(5)";
+            const String rx = ".+,\\s+(.+)$";
+            return ScrapeStringFromTextContent(lastRaceDocument, selector, rx);
+        }
+
+        private string ScrapeLastCourse(IDocument lastRaceDocument)
+        {
+            const String selector = "section.hr-racing-racecard-top-section > h1";
+            const String rx = "\\d{2}:\\d{2}\\s+(.+)";
+            return ScrapeStringFromTextContent(lastRaceDocument, selector, rx);
+        }
+
+        private string ScrapeLastAnalysis(IDocument lastRaceDocument)
         {
             const String selector = "div.hr-racing-runner-ride-desc-info";
             return ScrapeTextContent(lastRaceDocument, selector);
@@ -77,7 +69,7 @@ namespace RacingWebScraper
             return ScrapeTextContent(lastRaceDocument, selector);
         }
 
-        private String ScrapeLastOdds(AngleSharp.Dom.Html.IHtmlDocument lastRaceDocument, int position)
+        private String ScrapeLastOdds(IDocument lastRaceDocument, int position)
         {
             const String entrantSelector = "div.hr-racing-runner-position-container";
             var entrantElements = lastRaceDocument.QuerySelectorAll(entrantSelector);
@@ -86,7 +78,7 @@ namespace RacingWebScraper
             return ScrapeTextContent(entrantElements[position - 1], oddsSelector);
         }
 
-        private string ScrapeLastWeight(AngleSharp.Dom.Html.IHtmlDocument lastRaceDocument, int position)
+        private string ScrapeLastWeight(IDocument lastRaceDocument, int position)
         {
             const String entrantSelector = "div.hr-racing-runner-position-container";
             var entrantElements = lastRaceDocument.QuerySelectorAll(entrantSelector);
@@ -120,14 +112,13 @@ namespace RacingWebScraper
                     currentDistance = Distance.ConvertLengthsToDouble(textContent);
                     sumDistance += currentDistance;
                 }
-                catch (System.Exception ex)
+                catch (Exception ex)
                 {
-                    Console.WriteLine(ex.Message);
+                    log.Error(ex.Message);
                 }
                 return new double[2] {currentDistance, sumDistance};
             });
             var entrantDistancesList = entrantDistances.ToList();
-            entrantDistancesList.ForEach(i => Console.WriteLine("{0}", i));
 
             // min position value = 2
             var beatenLengths = entrantDistancesList[position - 2][1];
@@ -136,12 +127,20 @@ namespace RacingWebScraper
             return beatenLengths;
         }
 
+        String ScrapeLastPositionInField(IElement element)
+        {
+            const String selector = "table.horse-results-table > tbody > tr:nth-child(1) > td:nth-child(2)";
+            //const String rx = "(.+)/.+";
+            return ScrapeTextContent(element, selector);
+        }
+
         int ScrapeLastPosition(IElement element)
         {
             const String selector = "table.horse-results-table > tbody > tr:nth-child(1) > td:nth-child(2)";
             const String rx = "(.+)/.+";
             return ScrapeIntFromTextContent(element, selector, rx);
         }
+
 
         String ScrapeLastDistance(IDocument document)
         {
@@ -152,7 +151,7 @@ namespace RacingWebScraper
         private string ScrapeLastGoing(IDocument document)
         {
             const String selector = "li.hr-racecard-summary-race-distance";
-            const String rx = ".+,(.+)$";
+            const String rx = ".+,\\s+(.+)$";
             return ScrapeStringFromTextContent(document, selector, rx);
         }
 

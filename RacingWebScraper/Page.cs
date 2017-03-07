@@ -14,8 +14,16 @@ namespace RacingWebScraper
         {
             if(String.IsNullOrWhiteSpace(uri)) throw new ArgumentNullException("String uri cannot be empty or null");
             System.Net.Http.HttpClient client = new System.Net.Http.HttpClient();
-            string page = await client.GetStringAsync(uri);
+            string page = await client.GetStringAsync(uri).ConfigureAwait(false);
             return page;
+        }
+
+        public static async Task<AngleSharp.Dom.IDocument> GetDocumentAsync(string uri)
+        {
+            if (String.IsNullOrWhiteSpace(uri)) throw new ArgumentNullException("String uri cannot be empty or null");
+            System.Net.Http.HttpClient client = new System.Net.Http.HttpClient();
+            string page = await client.GetStringAsync(uri).ConfigureAwait(false);
+            return new AngleSharp.Parser.Html.HtmlParser().Parse(page);
         }
 
         public static string Get(string uri)
