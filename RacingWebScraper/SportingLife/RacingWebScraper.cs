@@ -102,7 +102,7 @@ namespace RacingWebScraper
                             var time = race.QuerySelector(timeSelector).TextContent;
                             var info = race.QuerySelector(racenameSelector).TextContent;
                             var url = SITE_PREFIX + race.QuerySelector(raceurlSelector).GetAttribute("href");
-
+                            var category = ScrapeCategory(race);
 
                             RaceType type;
                             if (info.ToUpper().Contains("HURDLE"))
@@ -112,7 +112,7 @@ namespace RacingWebScraper
                             else
                                 type = RaceType.FLAT;
 
-                            IRaceHeader header = new RaceHeader(id, course, going, date, time, title, info, url, type);
+                            IRaceHeader header = new RaceHeader(id, course, going, category, date, time, title, info, url, type);
                             headers.Add(header);
 
                         }
@@ -132,6 +132,13 @@ namespace RacingWebScraper
 
             _isRunning = false;
             return availHeaders;
+        }
+
+        private String ScrapeCategory(AngleSharp.Dom.IElement element)
+        {
+            const String selector = "div.hr-meeting-race-name-star > span";
+            const String rx = "Class (\\d)";
+            return ScrapeStringFromTextContent(element, selector, rx);
         }
 
         public async Task<List<Race>> GetRaceDataAsync(List<Dictionary<String, String>> raceData, IProgress<BasicUpdate> progress)

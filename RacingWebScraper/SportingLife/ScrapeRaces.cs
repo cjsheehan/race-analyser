@@ -101,7 +101,7 @@ namespace RacingWebScraper
             race.Course = raceData["course"];
             race.Going = raceData["going"];
             race.Date = raceData["date"];
-            //race.Class = raceData["class"];
+            race.Category = raceData["category"];
             race.Time = raceData["time"];
             race.Url = raceData["url"];
             race.Distance = ScrapeDistance(document);

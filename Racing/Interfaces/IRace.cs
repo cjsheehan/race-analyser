@@ -34,6 +34,7 @@ namespace Racing
         int Id { get; }
         string Course { get; }
         string Going { get; }
+        string Category { get; }
         string Date { get; }
         string Time { get; }
         string Title { get; }

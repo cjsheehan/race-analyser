@@ -116,6 +116,7 @@ my $RACE_TYPE = 'Type';
 my $IS_FLAT_RACE = 'Flat';
 my $DISTANCE = 'Distance';
 my $GOING = 'Going';
+my $CATEGORY = 'Category';
 my $NUM_RUNNERS = 'NumberOfRunners';
 my $ENTRANTS = 'Entrants';
 my $ENTRANT = 'Entrant';
@@ -598,8 +599,8 @@ sub writeRaceInfo {
     $$dest_sheet_ref->write_formula(($row+5), ($col+2), $predAvgSpeedFormula, $floatFormatCB);
   } 
   
-  my $class = $g_activeRace->{$CLASS};
-  $$dest_sheet_ref->write(($row+6), $col, $class, $entryFormat1) if ref $g_activeRace->{$CLASS} ne 'HASH';
+  my $category = $g_activeRace->{$CATEGORY};
+  $$dest_sheet_ref->write(($row+6), $col, $category, $entryFormat1) if ref $g_activeRace->{$CATEGORY} ne 'HASH';
  
   my $currency = $g_activeRace->{'Prizes'}{'Currency'};
   my $winPrize = $g_activeRace->{'Prizes'}{'PrizeMoney'}{'decimal'}[0];

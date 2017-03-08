@@ -53,7 +53,7 @@ namespace Racing
         public uint TotalYds { get; set; }
         public string Going { get; set; }
         public Going Egoing { get; set; }
-        public string Class { get; set; }
+        public string Category { get; set; }
         public int NumberOfRunners { get; set; }
         public List<Entrant> Entrants { get; set; }
         public Race()
@@ -83,7 +83,7 @@ namespace Racing
                 + "Dist :" + Distance + Environment.NewLine + "\t\t"
                 + "TotalYds :" + TotalYds + Environment.NewLine + "\t\t"
                 + "Going :" + Egoing + Environment.NewLine + "\t\t"
-                + "Class :" + Class + Environment.NewLine + "\t\t"
+                + "Class :" + Category + Environment.NewLine + "\t\t"
                 + "Runners :" + NumberOfRunners + Environment.NewLine + "\t\t"
                 + "Url :" + Url + Environment.NewLine;
 
@@ -99,6 +99,7 @@ namespace Racing
         {
         }
 
+        public string Category { get; private set; }
         public int Id { get; private set; }
         public string Course { get; private set; }
         public string Going { get; private set; }
@@ -138,11 +139,12 @@ namespace Racing
             }
         }
 
-        public RaceHeader(int id, string course, string going, string date, string time, string title, string info, string url, RaceType type)
+        public RaceHeader(int id, string course, string going, String category, string date, string time, string title, string info, string url, RaceType type)
         {
             Id = id;
             Course = course;
             Going = going;
+            Category = category;
             Date = date;
             Time = time;
             Title = title;

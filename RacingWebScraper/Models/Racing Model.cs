@@ -141,6 +141,7 @@ namespace RacingWebScraper
                     raceData.Add("url", race.Url);
                     raceData.Add("going", race.Going);
                     raceData.Add("course", race.Course);
+                    raceData.Add("category", race.Category);
                     raceData.Add("time", race.Time);
                     raceData.Add("date", race.Date);
                     allRacesData.Add(raceData);

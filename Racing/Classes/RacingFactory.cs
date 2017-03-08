@@ -29,7 +29,7 @@ namespace Racing
             race.Distance  = details.Dist;
             race.TotalYds = details.TotalYds;
             race.Going = details.Going; 
-            race.Class = details.Class;
+            race.Category = details.Class;
             race.NumberOfRunners  = details.Runners;
             race.Entrants = details.Horses;
         }
