@@ -56,8 +56,9 @@
 #                                     1. Excel::Writer::XLSX is now used for writing spreadsheets.     #
 #                                        It supports modern .xlsx formats and better handling of       #
 #                                        formulas.                                                     #
-#               xmlHorseBuilder v1.3: 06/03/17                                                        #
+#               xmlHorseBuilder v1.3: 06/03/17                                                         #
 #                                     1. Handle new XML data from scraper                              #
+#                                     1. Bugfix : going support "soft-.*"                              #
 ########################################################################################################
 
 use strict;
@@ -73,7 +74,7 @@ use File::Path qw(make_path);
 my $loc = $ARGV[1];
 my $sheetsLoc = $loc . "/";
 my $version = "v1.3";
-my $debug = 1;
+my $debug = 0;
 my $debugFH;
 my $debugFile = $loc  . "xmlHorseDEBUG.txt";
 my %g_allDates;
@@ -140,8 +141,9 @@ my $WINNING_TIME = 'WinningTime';
 my $BEATEN_LENGTHS = 'BeatenLengths';
 my $ANALYSIS = 'Analysis';
 my $CLASS = 'Class';
-my $RATING = 'OfficialRating';
+my $RATING = 'Rating';
 my $POSITION = 'Position';
+my $INFO = 'Info';
 
 
 ########################################################################################################
@@ -300,7 +302,7 @@ sub convertGoing {
     #Good/Soft
     $goingTable{'5'} = [ qr{^g.*d/s.*t.*}i, qr{^s.*d/s.*w.*}i, qr{^g.*d to s.*t.*}i ];
     #Soft
-    $goingTable{'6'}   = [ qr{^s.*t,?$}i, qr{^Soft,.*$}i ];
+    $goingTable{'6'}   = [ qr{^s.*t,?$}i, qr{^Soft,.*$}i, qr{^Soft-.*}i ];
     #Heavy
     $goingTable{'7'}  = [ qr{^h.*y.*}i ];
   }
@@ -315,7 +317,7 @@ sub convertGoing {
     #Good/Soft
     $goingTable{'4'} = [ qr{^g.*d/s.*t.*}i, qr{^s.*d/s.*w.*}i, qr{^g\S+d to s.*t.*}i ];
     #Soft
-    $goingTable{'5'}   = [ qr{^s.*t$}i, qr{^s.*t,.*$}i ];
+    $goingTable{'5'}   = [ qr{^s.*t$}i, qr{^s.*t,.*$}i, qr{^s.*t-.*$}i ];
     #Soft/Heavy
     $goingTable{'6'}   = [ qr{^s.*t/h.*y,?.*$}i, qr{^s.*t to h.*y,?.*$}i ];
     #Heavy
@@ -573,13 +575,15 @@ sub writeRaceInfo {
   my $runners = $g_activeRace->{$NUM_RUNNERS} . " runners";
   $$dest_sheet_ref->write(($row+1), $col, $runners);
   $$dest_sheet_ref->write(($row+2), $col, $g_activeRace->{$DATE});
-  $$dest_sheet_ref->write(($row+3), $col, $g_activeRace->{'Info'});
+  $$dest_sheet_ref->write(($row+3), $col, $g_activeRace->{$TITLE});
   
   my $dist = $g_activeRace->{$DISTANCE};
   my $convDist = convertDistance($dist);
   my $format = getFormat($convDist, "int",  "yes");			
   $$dest_sheet_ref->write(($row+4), $col, $dist, $strFormatLimeCB);
   $$dest_sheet_ref->write_number(($row+4), ($col+1), $convDist, $format );
+  
+  $$dest_sheet_ref->write_comment($row, $col, $g_activeRace->{$INFO}, width => 400 , height => 300);
   
   my $going = $g_activeRace->{$GOING};
   my $convGoing = convertGoing($going);
@@ -680,15 +684,17 @@ sub writeHorseInfo {
         $prevPos = $horse->{$LAST_RACE}{$POSITION};
         $prevTrack = $horse->{$LAST_RACE}{$COURSE};
         $prevRan = $horse->{$LAST_RACE}{$NUM_RUNNERS};
-        print "prevTrack " . $prevTrack if $debug;
     }
     
     my $prevFullPos = $prevPos; # Take copy as this is now a column entry: 2/11 becomes 2 in the substitution (next line)
     $prevPos =~ s/(\d+)\/\d+/$1/ if $prevPos;
     my $prevExists = 0;
     $prevExists = 1 if $prevTrack || $prevRan || $prevPos;
-    # g_activeRace->{$ENTRANTS}{$ENTRANT}[$iHorses]
-    my $comments = "History:\nPlacings:\nRating:\nPrevRace:\n";
+    my $lastAnalysis = "";
+    my $originalRating = "Rating: ";
+    my $formWatch = "";
+    my $lastRan = "";
+      
     for my $horseKey (keys %{ $horse })
     {
 
@@ -707,9 +713,34 @@ sub writeHorseInfo {
         $weight =~ s/(\d+-\d+).*/$1/;
         $$dest_sheet_ref->write(($row + 1), ($col + 8), $weight, $entryFormat1);
       }
+      elsif($FORM eq $horseKey)
+      {
+        my $form = $horse->{$FORM};
+        if($form ne "UNKNOWN") 
+        {
+            $$dest_sheet_ref->write(($row + 1), ($col + 4), $form, $strFormatCB ) if $form;
+        }
+     
+        # my $winPrize = $horse->{$key}{'PrizeMoney'}{'decimal'}[0];
+        # $$dest_sheet_ref->write(($row + 1), ($col + 5), $winPrize, $entryFormatRight) if $winPrize;     
+      }
+      elsif($FORM_WATCH eq $horseKey)
+      {
+        if(ref($horse->{$FORM_WATCH}) ne "HASH")
+        {
+          $formWatch = $horse->{$FORM_WATCH};
+        }
+      }
+      elsif($LAST_RAN eq $horseKey)
+      {
+        if(ref($horse->{$LAST_RAN}) ne "HASH")
+        {
+        print "last ran " .  $horse->{$LAST_RAN};
+          $$dest_sheet_ref->write(($row + 1), ($col + 5), $horse->{$LAST_RAN}, $strFormatCB);
+        }
+      }
       elsif($LAST_RACE eq $horseKey)
       {
-        print "IN LAST RACE\n";
         for my $key (keys $horse->{$LAST_RACE})
         {
             print $key . " KEY\n";
@@ -740,17 +771,6 @@ sub writeHorseInfo {
                     my $format = getFormat($going, "int", "no"); 
                     $$dest_sheet_ref->write_number((($row + 1), ($col + 18)), $going, $format);
                 }	
-            }
-            elsif('LastRacePrizes' eq $key)
-            {
-                my $winCurrency = $horse->{$key}{'Currency'};
-                if($winCurrency ne "UNKNOWN") 
-                {
-                    $$dest_sheet_ref->write(($row + 1), ($col + 4), $winCurrency, $strFormatCB ) if $winCurrency;
-                }
-             
-                my $winPrize = $horse->{$key}{'PrizeMoney'}{'decimal'}[0];
-                $$dest_sheet_ref->write(($row + 1), ($col + 5), $winPrize, $entryFormatRight) if $winPrize;     
             }
             elsif($BEATEN_LENGTHS eq $key)
             {
@@ -801,7 +821,7 @@ sub writeHorseInfo {
             {
                 if(ref($horse->{$LAST_RACE}{$ANALYSIS}) ne "HASH")
                 {
-                    $comments =~ s/History:/History:$horse->{$LAST_RACE}{$ANALYSIS}/;
+                  $lastAnalysis .= $horse->{$LAST_RACE}{$ANALYSIS};
                 }
             }
             elsif($CLASS eq $key)
@@ -860,32 +880,21 @@ sub writeHorseInfo {
           $$dest_sheet_ref->write_url(($row + 1), ($col + 7), $horse->{$JOCKEY_URL}, $horse->{$JOCKEY_NAME}, $format);
         }
       }
-      elsif($FORM eq $horseKey)
-      {
-        if(ref($horse->{$FORM}) ne "HASH")
-        {
-          $comments =~ s/Placings:/Placings:$horse->{$FORM}/;
-        }
-      }
       elsif($RATING eq $horseKey)
       {
         if(ref($horse->{$RATING}) ne "HASH")
         {
-          $comments =~ s/Rating:/Rating:$horse->{$RATING}/;
+          $originalRating .= $horse->{$RATING};
         }
       }
-      elsif($FORM_WATCH eq $horseKey)
-      {
-        if(ref($horse->{$FORM_WATCH}) ne "HASH")
-        {
-          $comments =~ s/History:/History:$horse->{$FORM_WATCH}/;
-        }
-      }
-      
-      #### Comments
-      $$dest_sheet_ref->write_comment(($row + 1), $col, $comments);
+
     }
     $row++;	
+    
+    # Write Comments
+    my $comment = $originalRating . "\n" . $formWatch;
+    $$dest_sheet_ref->write_comment($row, $col, $comment, width => 350 , height => 200);
+    $$dest_sheet_ref->write_comment($row, $col + 3, $lastAnalysis, width => 200 , height => 100);
   }
   addDynamicFormulas(\$$dest_sheet_ref, $raceSize, $g_jumps);
 }
@@ -1086,8 +1095,8 @@ sub writeHorseHeadings {
   $$dest_sheet_ref->write($row, ($col+1),  "New Time (s)", $headFormat2);
   $$dest_sheet_ref->write($row, ($col+2),  "2sec Time (s)", $headFormat2);
   $$dest_sheet_ref->write($row, ($col+3),  "Prev Pos", $headFormat2);
-  $$dest_sheet_ref->write($row, ($col+4),  "Prev Currency", $headFormat2);
-  $$dest_sheet_ref->write($row, ($col+5),  "Prev Prize", $headFormat2);
+  $$dest_sheet_ref->write($row, ($col+4),  "Form", $headFormat2);
+  $$dest_sheet_ref->write($row, ($col+5),  "Since Last", $headFormat2);
   $$dest_sheet_ref->write($row, ($col+6),  "Trainer", $headFormat2);
   $$dest_sheet_ref->write($row, ($col+7),  "Jockey", $headFormat2);
   $$dest_sheet_ref->write($row, ($col+8),  "Wgt", $headFormat2);

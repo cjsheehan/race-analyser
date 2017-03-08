@@ -38,7 +38,7 @@ namespace RacingWebScraper
         const String raceNameSelector = "li.hr-racecard-summary-race-name";
         const String raceDistanceSelector = "li.hr-racecard-summary-race-distance";
         const String raceGoingSelector = raceDistanceSelector;
-        
+
 
 
         //private const String runnerSelector = "di.hr-racing-runner-key-info-container";
@@ -108,8 +108,33 @@ namespace RacingWebScraper
             race.Title = ScrapeRaceTitle(document);
             race.NumberOfRunners = ScrapeNumberOfRunners(document);
             race.Entrants = await ScrapeEntrantsAsync(document).ConfigureAwait(false);
+            race.Info = ScrapeExtraInfo(document);
             Console.WriteLine("Finished Entrants" + race.Course + race.Time);
             return race;
+        }
+
+        private String ScrapeExtraInfo(IDocument document)
+        {
+            const String cardSectionSelector = "section.hr-racing-racecard-section";
+            const String sectionTypeSelector = "div.hr-racing-racecard-section-header > h4";
+            const String sectionBodySelector = "div.hr-racing-racecard-section-body";
+            var cardSections = document.QuerySelectorAll(cardSectionSelector);
+            String info = "";
+
+            foreach (var cardSection in cardSections)
+            {
+                var sectionTypeContent = ScrapeTextContent(cardSection, sectionTypeSelector);
+                bool isRequiredSection =
+                        new[] { "Verdict", "Betting" }.Contains(sectionTypeContent);
+
+                if (isRequiredSection)
+                {
+                    info = info + ScrapeTextContent(cardSection, sectionBodySelector) + "\n\n";
+                }
+
+            }
+
+            return info.Replace("Forecast", "Forecast ");
         }
 
         private String ScrapeRaceTitle(IDocument document)
@@ -138,7 +163,7 @@ namespace RacingWebScraper
             const String selector = "li.hr-racecard-summary-race-runners";
             var textContent = ScrapeTextContent(document, selector);
             textContent = Regex.Match(textContent, @"\d+").Value;
-            
+
 
             int numRunners;
             bool res = int.TryParse(textContent, out numRunners);
