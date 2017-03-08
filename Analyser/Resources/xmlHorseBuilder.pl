@@ -715,10 +715,9 @@ sub writeHorseInfo {
       }
       elsif($FORM eq $horseKey)
       {
-        my $form = $horse->{$FORM};
-        if($form ne "UNKNOWN") 
+        if(ref($horse->{$FORM}) ne "HASH") 
         {
-            $$dest_sheet_ref->write(($row + 1), ($col + 4), $form, $strFormatCB ) if $form;
+            $$dest_sheet_ref->write(($row + 1), ($col + 4), $horse->{$FORM}, $strFormatCB );
         }
      
         # my $winPrize = $horse->{$key}{'PrizeMoney'}{'decimal'}[0];
