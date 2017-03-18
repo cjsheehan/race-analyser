@@ -63,35 +63,20 @@ namespace RacingWebScraper
             double inc = 100 / raceData.Count;
             _progress.Report(new BasicUpdate(MIN_PROGRESS, ""));
              
-            var tasks = raceData.Select(async stringMap =>
+            foreach (var stringMap in raceData)
             {
-                String msg = string.Format(" scrape : {0} : {1}", stringMap["course"], stringMap["time"]);
+                String msg = string.Format(" scrape : {0} {1}", stringMap["course"], stringMap["time"]);
                 var document = await WebPage.GetDocumentAsync(stringMap["url"]).ConfigureAwait(false);
                 _currentRace = stringMap["url"];
-                var race = await ScrapeRaceDetail(document, stringMap);
-                races.Add(race);
-                log.Info("Finished" + msg);
+                _ntf.Notify("Started" + msg, Ntf.MESSAGE);
+                var race = await ScrapeRaceDetail(document, stringMap).ConfigureAwait(false);
                 _ntf.Notify("Finished" + msg, Ntf.MESSAGE);
+                races.Add(race);
                 currentProgress += inc;
                 _progress.Report(new BasicUpdate((int)currentProgress, string.Format("scraped race : {0} : {1}", stringMap["course"], stringMap["time"])));
-            });
-            await Task.WhenAll(tasks).ConfigureAwait(false);
+            }
             _progress.Report(new BasicUpdate(MAX_PROGRESS, "Completed."));
             return races;
-
-            //foreach (var stringMap in raceData)
-            //{
-            //    var document = await WebPage.GetDocumentAsync(stringMap["url"]).ConfigureAwait(false);
-            //    _currentRace = stringMap["url"];
-            //    Console.WriteLine("Current Race " + _currentRace);
-            //    log.Debug("Current Race " + _currentRace);
-            //    var race = await ScrapeRaceDetail(document, stringMap).ConfigureAwait(false);
-            //    races.Add(race);
-            //    currentProgress += inc;
-            //    _progress.Report(new BasicUpdate((int)currentProgress, string.Format("scraped race : {0} : {1}", stringMap["course"], stringMap["time"])));
-            //}
-            //_progress.Report(new BasicUpdate(MAX_PROGRESS, "Completed."));
-            //return races;
         }
 
         async Task<Race> ScrapeRaceDetail(IDocument document, Dictionary<String, String> raceData)
