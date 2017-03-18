@@ -88,6 +88,8 @@ namespace RacingWebScraper
                 entrants.Add(entrantOut);
             }
 
+            entrants = entrants.OrderBy(x => x.SaddleNumber).ToList();
+
             return entrants;
         }
 
