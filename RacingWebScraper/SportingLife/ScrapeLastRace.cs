@@ -33,24 +33,38 @@ namespace RacingWebScraper
             lastRace.Distance = ScrapeLastDistance(lastRaceDocument);
             lastRace.Going = ScrapeLastGoing(lastRaceDocument);
             lastRace.Course = ScrapeLastCourse(lastRaceDocument);
-            Console.WriteLine("Scraping beaten for " + horseName);
-            try
-            {
+            log.Debug("Scraping beaten for " + horseName);
 
-            	lastRace.BeatenLengths = ScrapeBeatenLengths(lastRaceDocument, position);
-            }
-            catch (System.Exception ex)
+            if(position > 0)
             {
-                Console.WriteLine(ex.Message);
-                lastRace.BeatenLengths = -1;
+                lastRace.Weight = ScrapeLastWeight(lastRaceDocument, position);
+                lastRace.Odds = ScrapeLastOdds(lastRaceDocument, position);
+                lastRace.Analysis = ScrapeLastAnalysis(lastRaceDocument, position);
+                try
+                {
+                    if (position == 1)
+                    {
+                        lastRace.BeatenLengths = 0;
+                    }
+                    else if (position > 1)
+                    {
+                        lastRace.BeatenLengths = ScrapeBeatenLengths(lastRaceDocument, position);
+                    }
+                }
+                catch (System.Exception e)
+                {
+                    log.Error("Failed to scrape beaten lengths: " + e.Message);
+                }
             }
-            lastRace.Weight = ScrapeLastWeight(lastRaceDocument, position);
-            lastRace.Odds = ScrapeLastOdds(lastRaceDocument, position);
+            else
+            {
+                log.Info("Unknown position " + position);
+            }
+
+
             lastRace.WinningTime = ScrapeLastWinningTime(lastRaceDocument);
-            lastRace.Analysis = ScrapeLastAnalysis(lastRaceDocument);
             lastRace.Class = lastClass;
             lastRace.Position = positionInField;
-            Console.WriteLine("FINISHED WITH lastrace " + horseName);
             return lastRace;
         }
 
@@ -82,10 +96,13 @@ namespace RacingWebScraper
             return ScrapeStringFromTextContent(lastRaceDocument, selector, rx);
         }
 
-        private string ScrapeLastAnalysis(IDocument lastRaceDocument)
+        private string ScrapeLastAnalysis(IDocument lastRaceDocument, int position)
         {
-            const String selector = "div.hr-racing-runner-ride-desc-info";
-            return ScrapeTextContent(lastRaceDocument, selector);
+            const String entrantSelector = "div.hr-racing-runner-form-trainer-jockey-block";
+            var entrantElements = lastRaceDocument.QuerySelectorAll(entrantSelector);
+
+            const String analysisSelector = "div.hr-racing-runner-ride-desc-info";
+            return ScrapeTextContent(entrantElements[position - 1], analysisSelector);
         }
 
         private String ScrapeLastWinningTime(IDocument lastRaceDocument)
@@ -119,8 +136,11 @@ namespace RacingWebScraper
 
             const String entrantSelector = "div.hr-racing-runner-position-container";
             var entrantElements = lastRaceDocument.QuerySelectorAll(entrantSelector);
-            if(entrantElements.Length == 0) return -1;
-
+            if(entrantElements.Length == 0)
+            {
+                log.Error(String.Format("0 entrants found in : {0}", lastRaceDocument.Url));
+                return -1;
+            }
             // Get the individual finishing distances between runners
             double sumDistance = 0.0;
             IEnumerable<double[]> entrantDistances = entrantElements.Skip(1).Take(position - 1).Select(e => 
@@ -135,6 +155,7 @@ namespace RacingWebScraper
                 var textContent = ScrapeTextContent(e, select);
                 if (String.IsNullOrEmpty(textContent))
                 {
+                    log.Error(String.Format("No distance found in element : {0}, with selector : {1}m url : ", e, select, lastRaceDocument.Url));
                     return new double[] { -1, -1 };
                 }
 
@@ -146,17 +167,21 @@ namespace RacingWebScraper
                 }
                 catch (Exception ex)
                 {
-                    log.Error(ex.Message);
+                    log.Error(String.Format("Failed to conver lengths to double : {0} , {1}", lastRaceDocument.Url, ex.Message));
                 }
                 return new double[2] {currentDistance, sumDistance};
             });
             var entrantDistancesList = entrantDistances.ToList();
 
-            if (entrantDistancesList.Count  == 0) return -1;
+            if (entrantDistancesList.Count == 0)
+            {
+                log.Error(String.Format("0 distances found in : {0}", lastRaceDocument.Url));
+                return -1;
+            }
 
             // min position value = 2
-            Console.WriteLine("Position " + position + " " + entrantDistancesList.Count);
             var beatenLengths = entrantDistancesList[position - 2][1];
+            log.Info("Position " + position + " " + entrantDistancesList.Count);
 
 
             return beatenLengths;
