@@ -9,16 +9,21 @@ namespace Betabelter
 {
     public class RacingPresenter : AsyncController
     {
+        private static readonly log4net.ILog log =
+log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
         private IRacingView _view;
         private INotify _ntf;
         private IRacingModel _model;
         private DateTime _dateTime;
         private IConfigPresenter _configPresenter;
         private Progress<BasicUpdate> _progress;
-       
+
 
         public RacingPresenter(IRacingView view)
         {
+
+
             _view = view;
             _ntf = _view as INotify;
             _model = new RacingScraperModel(_ntf);
@@ -35,7 +40,6 @@ namespace Betabelter
                 _view.ProgressString = progressArgs.Text;
             };
 
-            
 
             SubscribeToViewEvents(view);
             SubscribeToModelEvents(_model);
@@ -86,10 +90,12 @@ namespace Betabelter
 
         protected virtual void GetMeetingsEventHandler(object sender, EventArgs e)
         {
+            log.Debug("Entered GetMeetingsEventHandler");
+            log.Info("Entered GetMeetingsEventHandler");
             try
             {
-	            string date = _dateTime.ToShortDateString();
-	            _ntf.Notify(String.Format("Getting meetings for {0}...", _dateTime.ToShortDateString()), Ntf.MESSAGE);
+                string date = _dateTime.ToShortDateString();
+                _ntf.Notify(String.Format("Getting meetings for {0}...", _dateTime.ToShortDateString()), Ntf.MESSAGE);
                 SetUIControls(false, false, _configPresenter.WorkDirExists(), false);
                 _model.GetMeetingsAsync(_dateTime, _progress);
 
@@ -105,8 +111,8 @@ namespace Betabelter
         {
             try
             {
-	            bool selState = _view.AllSelectedState;
-	            _model.SetAllRacesSelected(GetSelectedMeetingId(), selState);
+                bool selState = _view.AllSelectedState;
+                _model.SetAllRacesSelected(GetSelectedMeetingId(), selState);
             }
             catch (System.Exception)
             {
@@ -159,7 +165,7 @@ namespace Betabelter
         {
             try
             {
-	            _ntf.Notify(String.Format("Getting race data..."), Ntf.MESSAGE);
+                _ntf.Notify(String.Format("Getting race data..."), Ntf.MESSAGE);
                 SetUIControls(false, false, _configPresenter.WorkDirExists(), false);
                 _model.GetRaceDataAsync(_progress);
                 SetUIControls(true, true, _configPresenter.WorkDirExists(), true);
@@ -210,21 +216,21 @@ namespace Betabelter
         {
             try
             {
-	            // TODO: is selection of 1st meeting required?
-	            if (_model.Meetings != null && _model.Meetings.Count > 0)
-	            {
-	                String id = _model.Meetings[0];
-	                _model.SelectMeeting(id);
-	                //peek at 1st race to init the combobox for default type
-	                _view.DefaultType = _view.Races[0].Type;
-	                _ntf.Notify("SUCCESS! Meetings available", Ntf.MESSAGE);
+                // TODO: is selection of 1st meeting required?
+                if (_model.Meetings != null && _model.Meetings.Count > 0)
+                {
+                    String id = _model.Meetings[0];
+                    _model.SelectMeeting(id);
+                    //peek at 1st race to init the combobox for default type
+                    _view.DefaultType = _view.Races[0].Type;
+                    _ntf.Notify("SUCCESS! Meetings available", Ntf.MESSAGE);
                     SetUIControls(true, true, _configPresenter.WorkDirExists(), false);
-	            }
-	            else
-	            {
-	                _ntf.Notify(string.Format("No meetings available for {0}", _dateTime), Ntf.WARNING);
+                }
+                else
+                {
+                    _ntf.Notify(string.Format("No meetings available for {0}", _dateTime), Ntf.WARNING);
                     SetUIControls(true, false, _configPresenter.WorkDirExists(), false);
-	            }
+                }
             }
             catch (System.Exception)
             {

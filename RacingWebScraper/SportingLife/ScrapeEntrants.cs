@@ -13,62 +13,71 @@ namespace RacingWebScraper
 {
     public partial class SLifeRacingScraper
     {
-        const String entrantsSelector = "section.hr-racing-runner-wrapper"; 
+        const String entrantsSelector = "section.hr-racing-runner-wrapper";
         async Task<List<Entrant>> ScrapeEntrantsAsync(IDocument document)
         {
-            
+
             var entrantsElements = document.QuerySelectorAll(entrantsSelector);
 
-
+            log.Debug("Scraping Entrants :  " + document.Url);
             var parallelEntrants = new ConcurrentQueue<Entrant>();
-            //Parallel.ForEach(entrantsElements, async (element) =>
-            //{
             var tasks = entrantsElements.Select(async element =>
             {
                 var entrant = new Entrant();
-                entrant.SaddleNumber = ScrapeSaddleNumber(element);
-                entrant.StallNumber = ScrapeStallNumber(element);
-                entrant.HorseUrl = ScrapeHorseUrl(element);
-                entrant.HorseName = ScrapeHorseName(element);
-                entrant.Age = ScrapeHorseAge(element);
-                entrant.Rating = ScrapeHorseOfficialRating(element);
-                entrant.Form = ScrapeHorseForm(element);
-                entrant.FormWatch = ScrapeHorseFormWatch(element);
-                entrant.LastRan = ScrapeHorseLastRan(element);
-                entrant.Weight = ScrapeHorseWeight(element);
-                entrant.JockeyName = ScrapeJockeyName(element);
-                entrant.JockeyUrl = ScrapeJockeyUrl(element);
-                entrant.JockeyClaim = ScrapeJockeyClaim(element);
-                entrant.TrainerName = ScrapeTrainerName(element);
-                entrant.TrainerUrl = ScrapeTrainerUrl(element);
-                entrant.Odds = ScrapeOdds(element);
-
-                log.Info("In Entrant " + entrant.HorseName);
-                Console.WriteLine("In Entrant " + entrant.HorseName);
-                // Test whether profile contains valid last ran data
-                // SL: only displays races where runner finished race.
-                // Therefore needs compared to last ran days from racecard
-                var isValid = await IsLastRanDataValidAsync(element).ConfigureAwait(false);
-
-                if (isValid)
+                try
                 {
-                    entrant.LastRace = await ScrapeLastRace(entrant.HorseUrl, entrant.HorseName).ConfigureAwait(false);
-                }
-                else
-                {
-                    if (!String.IsNullOrEmpty(entrant.Form))
+                    entrant.HorseName = ScrapeHorseName(element);
+                    entrant.SaddleNumber = ScrapeSaddleNumber(element);
+                    entrant.StallNumber = ScrapeStallNumber(element);
+                    entrant.HorseUrl = ScrapeHorseUrl(element);
+                    entrant.Age = ScrapeHorseAge(element);
+                    entrant.Rating = ScrapeHorseOfficialRating(element);
+                    entrant.Form = ScrapeHorseForm(element);
+                    entrant.FormWatch = ScrapeHorseFormWatch(element);
+                    entrant.LastRan = ScrapeHorseLastRan(element);
+                    entrant.Weight = ScrapeHorseWeight(element);
+                    entrant.JockeyName = ScrapeJockeyName(element);
+                    entrant.JockeyUrl = ScrapeJockeyUrl(element);
+                    entrant.JockeyClaim = ScrapeJockeyClaim(element);
+                    entrant.TrainerName = ScrapeTrainerName(element);
+                    entrant.TrainerUrl = ScrapeTrainerUrl(element);
+                    entrant.Odds = ScrapeOdds(element);
+
+                    log.Debug("In Entrant " + entrant.HorseName);
+                    // Test whether profile contains valid last ran data
+                    // SL: only displays races where runner finished race.
+                    // Therefore needs compared to last ran days from racecard
+                    var isValid = await IsLastRanDataValidAsync(element).ConfigureAwait(false);
+
+                    if (isValid)
                     {
-                        entrant.LastRace = new LastRace();
-                        entrant.LastRace.Position = ScrapeLastPositionFromForm(entrant.Form);
+                        entrant.LastRace = await ScrapeLastRace(entrant.HorseUrl, entrant.HorseName).ConfigureAwait(false);
                     }
                     else
                     {
-                        entrant.LastRace = new LastRace();
-                        entrant.LastRace.Position = "No Form";
+                        if (!String.IsNullOrEmpty(entrant.Form))
+                        {
+                            entrant.LastRace = new LastRace();
+                            entrant.LastRace.Position = ScrapeLastPositionFromForm(entrant.Form);
+                        }
+                        else
+                        {
+                            entrant.LastRace = new LastRace();
+                            entrant.LastRace.Position = "No Form";
+                        }
                     }
+
+                    parallelEntrants.Enqueue(entrant);
+                }
+                catch (InvalidScrapeException e)
+                {
+                    log.Error(String.Format("Failed to scrape entrant : {0}, {1}", entrant.HorseUrl, document.Url, e.Message));
+                }
+                catch (Exception e)
+                {
+                    log.Error(String.Format("Failed to scrape entrant : {0}, {1}", entrant.HorseUrl, document.Url, e.Message));
                 }
 
-                parallelEntrants.Enqueue(entrant);
             });
             await Task.WhenAll(tasks).ConfigureAwait(false);
 

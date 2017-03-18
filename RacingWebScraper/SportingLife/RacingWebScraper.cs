@@ -90,7 +90,7 @@ namespace RacingWebScraper
                     foreach (var meeting in meetings)
                     {
                         int id = 0;
-                        var course = meeting.QuerySelector(courseSelector).TextContent; // div.dividerRow > h2
+                        var course = meeting.QuerySelector(courseSelector).TextContent;
                         var going = meeting.QuerySelector(goingSelector).TextContent;
                         var races = meeting.QuerySelectorAll(raceSelector);
 

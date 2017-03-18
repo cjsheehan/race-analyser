@@ -62,17 +62,16 @@ namespace RacingWebScraper
             double currentProgress = 0;
             double inc = 100 / raceData.Count;
             _progress.Report(new BasicUpdate(MIN_PROGRESS, ""));
-
+             
             var tasks = raceData.Select(async stringMap =>
             {
-                _progress.Report(new BasicUpdate((int)currentProgress, string.Format("attempting scrape : {0} : {1}", stringMap["course"], stringMap["time"])));
-                Console.WriteLine(string.Format("attempting scrape : {0} : {1}", stringMap["course"], stringMap["time"]));
+                String msg = string.Format(" scrape : {0} : {1}", stringMap["course"], stringMap["time"]);
                 var document = await WebPage.GetDocumentAsync(stringMap["url"]).ConfigureAwait(false);
                 _currentRace = stringMap["url"];
-                Console.WriteLine("Current Race " + _currentRace);
                 var race = await ScrapeRaceDetail(document, stringMap);
                 races.Add(race);
-                string.Format("finished scrape : {0} : {1}", stringMap["course"], stringMap["time"]);
+                log.Info("Finished" + msg);
+                _ntf.Notify("Finished" + msg, Ntf.MESSAGE);
                 currentProgress += inc;
                 _progress.Report(new BasicUpdate((int)currentProgress, string.Format("scraped race : {0} : {1}", stringMap["course"], stringMap["time"])));
             });
