@@ -317,7 +317,7 @@ sub convertGoing {
     #Good/Soft
     $goingTable{'4'} = [ qr{^g.*d/s.*t.*}i, qr{^s.*d/s.*w.*}i, qr{^g\S+d to s.*t.*}i ];
     #Soft
-    $goingTable{'5'}   = [ qr{^s.*t$}i, qr{^s.*t,.*$}i, qr{^s.*t-.*$}i ];
+    $goingTable{'5'}   = [ qr{^s.*t$}i, qr{^s.*t,.*$}i, qr{^s.*t-.*$}i, qr{^s.*t \(.*$}i ];
     #Soft/Heavy
     $goingTable{'6'}   = [ qr{^s.*t/h.*y,?.*$}i, qr{^s.*t to h.*y,?.*$}i ];
     #Heavy
@@ -689,18 +689,18 @@ sub writeHorseInfo {
     my $prevFullPos = $prevPos; # Take copy as this is now a column entry: 2/11 becomes 2 in the substitution (next line)
     $prevPos =~ s/(\d+)\/\d+/$1/ if $prevPos;
     my $prevExists = 0;
-    $prevExists = 1 if $prevTrack || $prevRan || $prevPos;
+    $prevExists = 1 if $prevTrack || $prevRan || $prevPos;   
     my $lastAnalysis = "";
     my $originalRating = "Rating: ";
     my $formWatch = "";
     my $lastRan = "";
-      
+           
     for my $horseKey (keys %{ $horse })
     {
 
       my $localFormat = $strFormatGreenCB;
       if($HORSE_NAME eq $horseKey)
-      {
+      {    
         $$dest_sheet_ref->write_url(($row + 1), ($col), $horse->{$HORSE_URL}, $horse->{$HORSE_NAME}, $entryFormatUrl );
       }
       elsif($TRAINER_NAME eq $horseKey)
@@ -734,7 +734,6 @@ sub writeHorseInfo {
       {
         if(ref($horse->{$LAST_RAN}) ne "HASH")
         {
-        print "last ran " .  $horse->{$LAST_RAN};
           $$dest_sheet_ref->write(($row + 1), ($col + 5), $horse->{$LAST_RAN}, $strFormatCB);
         }
       }
@@ -742,7 +741,6 @@ sub writeHorseInfo {
       {
         for my $key (keys $horse->{$LAST_RACE})
         {
-            print $key . " KEY\n";
             if($WEIGHT eq $key)
             {
                 my $prevWgt = $horse->{$LAST_RACE}{$WEIGHT};
@@ -775,7 +773,14 @@ sub writeHorseInfo {
             {
                 my $format = $entryFormat1;
                 my $prevBeatDist = $horse->{$LAST_RACE}{$BEATEN_LENGTHS};
-                if($prevBeatDist && ref $prevBeatDist ne "HASH" && $prevExists)
+  
+                if($prevFullPos && $prevFullPos =~ /^[A-Z]+$/)
+                {
+                    ## race incident (fell (F), unseated rider (UR) etc) 
+                    $prevBeatDist =  "N/A";    
+                    $format = getFormat(1, "str", "yes");
+                }
+                elsif($prevBeatDist && ref $prevBeatDist ne "HASH" && $prevExists)
                 {
                     ## valid previous race data available
                     $prevBeatDist = convertBeatenLengths($prevBeatDist);      
