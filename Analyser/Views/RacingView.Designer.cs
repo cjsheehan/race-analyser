@@ -92,14 +92,14 @@
             this.dataGridViewRaceCards.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
             this.dataGridViewRaceCards.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.AllCells;
             this.dataGridViewRaceCards.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
-            this.dataGridViewRaceCards.Location = new System.Drawing.Point(12, 69);
+            this.dataGridViewRaceCards.Location = new System.Drawing.Point(1, 69);
             this.dataGridViewRaceCards.Name = "dataGridViewRaceCards";
-            this.dataGridViewRaceCards.Size = new System.Drawing.Size(853, 301);
+            this.dataGridViewRaceCards.Size = new System.Drawing.Size(847, 301);
             this.dataGridViewRaceCards.TabIndex = 5;
             // 
             // buttonGetRaceData
             // 
-            this.buttonGetRaceData.Location = new System.Drawing.Point(791, 16);
+            this.buttonGetRaceData.Location = new System.Drawing.Point(780, 16);
             this.buttonGetRaceData.Name = "buttonGetRaceData";
             this.buttonGetRaceData.Size = new System.Drawing.Size(68, 35);
             this.buttonGetRaceData.TabIndex = 7;
@@ -140,7 +140,7 @@
             this.groupBoxCards.Controls.Add(this.buttonGetRaceData);
             this.groupBoxCards.Location = new System.Drawing.Point(253, 44);
             this.groupBoxCards.Name = "groupBoxCards";
-            this.groupBoxCards.Size = new System.Drawing.Size(876, 377);
+            this.groupBoxCards.Size = new System.Drawing.Size(854, 377);
             this.groupBoxCards.TabIndex = 12;
             this.groupBoxCards.TabStop = false;
             this.groupBoxCards.Text = "Races";
@@ -166,14 +166,14 @@
             this.textBoxOutput.Multiline = true;
             this.textBoxOutput.Name = "textBoxOutput";
             this.textBoxOutput.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.textBoxOutput.Size = new System.Drawing.Size(319, 301);
+            this.textBoxOutput.Size = new System.Drawing.Size(341, 301);
             this.textBoxOutput.TabIndex = 6;
             this.textBoxOutput.WordWrap = false;
             // 
             // buttonAnalyse
             // 
             this.buttonAnalyse.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonAnalyse.Location = new System.Drawing.Point(257, 17);
+            this.buttonAnalyse.Location = new System.Drawing.Point(279, 17);
             this.buttonAnalyse.Name = "buttonAnalyse";
             this.buttonAnalyse.Size = new System.Drawing.Size(68, 35);
             this.buttonAnalyse.TabIndex = 11;
@@ -189,9 +189,9 @@
             this.groupBoxNtf.Controls.Add(this.buttonOpenWorkDir);
             this.groupBoxNtf.Controls.Add(this.buttonAnalyse);
             this.groupBoxNtf.Controls.Add(this.textBoxOutput);
-            this.groupBoxNtf.Location = new System.Drawing.Point(1135, 44);
+            this.groupBoxNtf.Location = new System.Drawing.Point(1113, 44);
             this.groupBoxNtf.Name = "groupBoxNtf";
-            this.groupBoxNtf.Size = new System.Drawing.Size(331, 377);
+            this.groupBoxNtf.Size = new System.Drawing.Size(353, 377);
             this.groupBoxNtf.TabIndex = 13;
             this.groupBoxNtf.TabStop = false;
             this.groupBoxNtf.Text = "Output";
@@ -199,7 +199,7 @@
             // buttonOpenWorkDir
             // 
             this.buttonOpenWorkDir.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.buttonOpenWorkDir.Location = new System.Drawing.Point(6, 16);
+            this.buttonOpenWorkDir.Location = new System.Drawing.Point(6, 17);
             this.buttonOpenWorkDir.Name = "buttonOpenWorkDir";
             this.buttonOpenWorkDir.Size = new System.Drawing.Size(68, 35);
             this.buttonOpenWorkDir.TabIndex = 12;

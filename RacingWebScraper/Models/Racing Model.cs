@@ -225,7 +225,7 @@ namespace RacingWebScraper
 
         public async Task AnalyseRaceData()
         {
-            PerlAnalyser pa = new PerlAnalyser() { WorkDir = this.WorkDir };
+            PerlAnalyser pa = new PerlAnalyser(_ntf) { WorkDir = this.WorkDir };
             await pa.Analyse(_scrapedRaces);
             OnAnalyseRaceDataAsyncCompleted(this, EventArgs.Empty);
         }

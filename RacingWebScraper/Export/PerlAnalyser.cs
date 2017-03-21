@@ -19,39 +19,35 @@ namespace RacingWebScraper
         private const string SCRIPT_NAME = "xmlHorseBuilder.pl";
         private const string XML_FILE = "meeting.xml";
         private const int WAIT = 10000;
+        private INotify _ntf;
        
-        public PerlAnalyser()
+        public PerlAnalyser(INotify ntf)
         {
+            if (ntf == null) throw new ArgumentNullException("ntf is null");
             string execLoc = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase);
             _execLoc = execLoc.Replace("file:\\", "");
             _scriptFilePath = _execLoc + "\\" + SCRIPT_NAME;
+            _ntf = ntf;
         }
+
         public async System.Threading.Tasks.Task Analyse(List<Race> races)
         {
-            if (races == null) throw new ArgumentNullException("List<Race> races cannot be null");
-             if (String.IsNullOrEmpty(WorkDir)) throw new ArgumentNullException("string WorkDir cannot be null or empty");
+            if (races == null)
+            {
+                _ntf.Notify("races empty", Ntf.ERROR);
+                throw new ArgumentNullException("races is null");
+            }
+            if (String.IsNullOrEmpty(WorkDir))
+            {
+                _ntf.Notify("WorkDir is empty", Ntf.ERROR);
+                throw new ArgumentNullException("WorkDir is null or empty");
+            }
 
             string outFile = WorkDir + "\\" + XML_FILE;
 
             FileInfo fi = new FileInfo(outFile);
             if(!fi.Exists)
-                fi.Create();
-
-            List<DTO_Race> dtoRaces = new List<DTO_Race>();
-            //foreach (var v in races)
-            //{
-            //    DTO_Race race = null;
-            //    if (v != null)
-            //    {
-            //        RacingFactory.CreateRaceDTO(v, ref race);
-            //    }
-
-            //    if (race != null)
-            //    {
-            //        dtoRaces.Add(race);
-            //    }
-            //}
-            
+                fi.Create();     
 
             using (TextWriter tw = new StreamWriter(fi.Open(FileMode.Truncate)))
             {
@@ -59,7 +55,6 @@ namespace RacingWebScraper
                 System.Xml.Serialization.XmlSerializer x = new System.Xml.Serialization.XmlSerializer(races.GetType());
                 x.Serialize(tw, races);
             }
-
 
             StringBuilder args = new StringBuilder();
             args.Append("\"");
@@ -70,6 +65,7 @@ namespace RacingWebScraper
             args.Append(WorkDir);
             args.Append("\"");
 
+            _ntf.Notify(String.Format("Running {0} {1} {2}", _scriptFilePath, outFile, WorkDir), Ntf.MESSAGE);
             await RunPerlProc(args.ToString());
         }
 
