@@ -15,7 +15,7 @@ namespace RacingWebScraper
         async Task<LastRace> ScrapeLastRace(String horseUrl, String horseName)
         {
             // Get horse profile page
-            var profileDocument = await WebPage.GetDocumentAsync(horseUrl).ConfigureAwait(false);
+            var profileDocument = await HtmlService.GetDocumentAsync(horseUrl).ConfigureAwait(false);
     
             // Get required data from profile
             var positionInField = ScrapeLastPositionInField(profileDocument.DocumentElement);
@@ -25,7 +25,7 @@ namespace RacingWebScraper
             // Get page for last race
             const String lastRaceUrlSelector = "td:nth-child(1) > a.hr-racing-form-racecard-link";
             var lastRaceUrl = SITE_PREFIX + ScrapeUrl(profileDocument, lastRaceUrlSelector);
-            var lastRaceDocument = await WebPage.GetDocumentAsync(lastRaceUrl).ConfigureAwait(false);
+            var lastRaceDocument = await HtmlService.GetDocumentAsync(lastRaceUrl).ConfigureAwait(false);
 
             // Scrape data
             LastRace lastRace = new LastRace();

@@ -66,7 +66,7 @@ namespace RacingWebScraper
             foreach (var stringMap in raceData)
             {
                 String msg = string.Format(" scrape : {0} {1}", stringMap["course"], stringMap["time"]);
-                var document = await WebPage.GetDocumentAsync(stringMap["url"]).ConfigureAwait(false);
+                var document = await HtmlService.GetDocumentAsync(stringMap["url"]).ConfigureAwait(false);
                 _currentRace = stringMap["url"];
                 _ntf.Notify("Started" + msg, Ntf.MESSAGE);
                 var race = await ScrapeRaceDetail(document, stringMap).ConfigureAwait(false);

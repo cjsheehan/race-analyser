@@ -77,7 +77,7 @@ namespace RacingWebScraper
                     headers = new List<IRaceHeader>();
                     String date = String.Format("{0:yyyy-MM-dd}", dt);
                     String uri = ROOT_CARDS_URI + date;
-                    var document = await WebPage.GetDocumentAsync(uri).ConfigureAwait(false);
+                    var document = await HtmlService.GetDocumentAsync(uri).ConfigureAwait(false);
                     var meetings = document.QuerySelectorAll(meetingSelector);
 
                     double currentProgress = 0;

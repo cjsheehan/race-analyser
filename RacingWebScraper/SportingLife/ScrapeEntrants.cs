@@ -97,7 +97,7 @@ namespace RacingWebScraper
         {
             // Get last ran page form horse profile
             var profileUrl = ScrapeHorseUrl(element);
-            var profileDocument = await WebPage.GetDocumentAsync(profileUrl).ConfigureAwait(false);
+            var profileDocument = await HtmlService.GetDocumentAsync(profileUrl).ConfigureAwait(false);
 
             // Get date of last race from profile
             const String dateSelector = "table.horse-results-table > tbody > tr:nth-child(1) > td:nth-child(1) > a";
