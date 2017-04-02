@@ -19,7 +19,7 @@ namespace RacingWebScraper
 
             var entrantsElements = ScrapeEntrantsElements(document);
 
-            log.Debug("Scraping Entrants :  " + document.Url);
+            log.Debug("Scraping Entrants :  " + HtmlService.GetCanonicalUrl(document));
             var parallelEntrants = new ConcurrentQueue<Entrant>();
             var tasks = entrantsElements.Select(async element =>
             {
@@ -71,11 +71,11 @@ namespace RacingWebScraper
                 }
                 catch (InvalidScrapeException e)
                 {
-                    log.Error(String.Format("Failed to scrape entrant : {0}, {1}", entrant.HorseUrl, document.Url, e.Message));
+                    log.Error(String.Format("Failed to scrape entrant : {0}, {1}", entrant.HorseUrl, HtmlService.GetCanonicalUrl(document), e.Message));
                 }
                 catch (Exception e)
                 {
-                    log.Error(String.Format("Failed to scrape entrant : {0}, {1}", entrant.HorseUrl, document.Url, e.Message));
+                    log.Error(String.Format("Failed to scrape entrant : {0}, {1}", entrant.HorseUrl, HtmlService.GetCanonicalUrl(document), e.Message));
                 }
 
             });

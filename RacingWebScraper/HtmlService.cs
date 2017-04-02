@@ -11,7 +11,14 @@ namespace RacingWebScraper
         {
             if (String.IsNullOrWhiteSpace(uri)) throw new ArgumentNullException("uri is empty or null");
             String page = await _httpClient.GetStringAsync(uri).ConfigureAwait(false);
-            return await _htmlParser.ParseAsync(page).ConfigureAwait(false);
+            return  await _htmlParser.ParseAsync(page).ConfigureAwait(false);
+        }
+
+        public static String GetCanonicalUrl(AngleSharp.Dom.IDocument document)
+        {
+            if (document == null) throw new ArgumentNullException("document is null");
+            String url = document.QuerySelector("link[rel='canonical']").GetAttribute("href");
+            return url;
         }
     }
 }

@@ -24,8 +24,12 @@ namespace RacingWebScraper
 
             // Get page for last race
             const String lastRaceUrlSelector = "td:nth-child(1) > a.hr-racing-form-racecard-link";
-            var lastRaceUrl = SITE_PREFIX + ScrapeUrl(profileDocument, lastRaceUrlSelector);
-            var lastRaceDocument = await HtmlService.GetDocumentAsync(lastRaceUrl).ConfigureAwait(false);
+            // https://www.sportinglife.com/racing/racecards/2017-03-17/cheltenham/racecard/212410/st.-james's-place-foxhunter-challenge-cup-open-hunters'-chase
+            // https://www.sportinglife.com/racing/results/2017-03-17/cheltenham/212410/st.-james's-place-foxhunter-challenge-cup-open-hunters'-chase
+            var lastRaceCardUrl = SITE_PREFIX + ScrapeUrl(profileDocument, lastRaceUrlSelector);
+            var lastRaceResultUrl = lastRaceCardUrl.Replace("/racecards/", "/results/")
+                                        .Replace("/racecard/", "/");
+            var lastRaceDocument = await HtmlService.GetDocumentAsync(lastRaceResultUrl).ConfigureAwait(false);
 
             // Scrape data
             LastRace lastRace = new LastRace();
@@ -194,7 +198,7 @@ namespace RacingWebScraper
             var entrantElements = ScrapeEntrantsElements(lastRaceDocument);
             if(entrantElements.Length == 0)
             {
-                log.Error(String.Format("0 entrants found in : {0}", lastRaceDocument.Url));
+                log.Error(String.Format("0 entrants found in : {0}", HtmlService.GetCanonicalUrl(lastRaceDocument)));
                 return -1;
             }
             // Get the individual finishing distances between runners
@@ -211,7 +215,7 @@ namespace RacingWebScraper
                 var textContent = ScrapeTextContent(e, select);
                 if (String.IsNullOrEmpty(textContent))
                 {
-                    log.Error(String.Format("No distance found in element : {0}, with selector : {1}, url : {2} ", e, select, lastRaceDocument.Url));
+                    log.Error(String.Format("No distance found in element : {0}, with selector : {1}, url : {2} ", e, select, HtmlService.GetCanonicalUrl(lastRaceDocument)));
                     return new double[] { -1, -1 };
                 }
 
@@ -223,7 +227,7 @@ namespace RacingWebScraper
                 }
                 catch (Exception ex)
                 {
-                    log.Error(String.Format("Failed to conver lengths to double : {0} , {1}", lastRaceDocument.Url, ex.Message));
+                    log.Error(String.Format("Failed to conver lengths to double : {0} , {1}", HtmlService.GetCanonicalUrl(lastRaceDocument), ex.Message));
                 }
                 return new double[2] {currentDistance, sumDistance};
             });
@@ -231,7 +235,7 @@ namespace RacingWebScraper
 
             if (entrantDistancesList.Count == 0)
             {
-                log.Error(String.Format("0 distances found in : {0}", lastRaceDocument.Url));
+                log.Error(String.Format("0 distances found in : {0}", HtmlService.GetCanonicalUrl(lastRaceDocument)));
                 return -1;
             }
 
