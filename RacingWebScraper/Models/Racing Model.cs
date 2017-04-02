@@ -129,10 +129,6 @@ namespace RacingWebScraper
         {
             CurrentTaskProgress = 0; // TODO : Remove old progress impl
             List<Dictionary<String, String>> allRacesData = new List<Dictionary<string, string>>();
-            //race.Course = raceData["course"];
-            //race.Class = raceData["class"];
-            //race.Time = raceData["time"];
-            //race.Url = raceData["url"];
             foreach (IRaceHeader race in _raceHeaders)
             {
                 if (race.Selected == true)
@@ -153,13 +149,6 @@ namespace RacingWebScraper
                 _scrapedRaces.Clear();
                 foreach (var race in races)
                 {
-                    //IRaceHeader header = GetRaceHeader(detail.Url);
-                    //IRace race = null;
-                    //if (header != null)
-                    //{
-                    //    RacingFactory.CreateRace(header, detail, ref race);
-                    //}
-
                     if (race != null)
                     {
                         _scrapedRaces.Add(race);
