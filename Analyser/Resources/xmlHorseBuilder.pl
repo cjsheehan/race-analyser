@@ -773,12 +773,19 @@ sub writeHorseInfo {
             {
                 my $format = $entryFormat1;
                 my $prevBeatDist = $horse->{$LAST_RACE}{$BEATEN_LENGTHS};
+                print $prevPos . " " . $prevBeatDist . "\n";
   
                 if($prevFullPos && $prevFullPos =~ /^[A-Z]+$/)
                 {
                     ## race incident (fell (F), unseated rider (UR) etc) 
                     $prevBeatDist =  "N/A";    
                     $format = getFormat(1, "str", "yes");
+                }
+                elsif($prevPos > 1 && $prevBeatDist == -1)
+                {
+                    ## race position but no beaten distance
+                    $prevBeatDist = -1;
+                    $format = getFormat($prevBeatDist, "float", "no");
                 }
                 elsif($prevBeatDist && ref $prevBeatDist ne "HASH" && $prevExists)
                 {

@@ -29,17 +29,65 @@ namespace RacingWebScraper
 
             // Scrape data
             LastRace lastRace = new LastRace();
+            String errMsg = "Failed to scrape last race data for " + horseName;
             if (!IsWeighedIn(lastRaceDocument)) return lastRace;
-            lastRace.Distance = ScrapeLastDistance(lastRaceDocument);
-            lastRace.Going = ScrapeLastGoing(lastRaceDocument);
-            lastRace.Course = ScrapeLastCourse(lastRaceDocument);
-            log.Debug("Scraping beaten for " + horseName);
+
+            try
+            {
+            	lastRace.Distance = ScrapeLastDistance(lastRaceDocument);
+            }
+            catch (System.Exception ex)
+            {
+            	log.Error(errMsg + ": distance");
+            }
+
+            try
+            {
+            	lastRace.Going = ScrapeLastGoing(lastRaceDocument);
+            }
+            catch (System.Exception ex)
+            {
+            	log.Error(errMsg + ": going");
+            }
+
+            try
+            {
+            	lastRace.Course = ScrapeLastCourse(lastRaceDocument);
+            }
+            catch (System.Exception ex)
+            {
+            	log.Error(errMsg + ": course");
+            }
 
             if(position > 0)
             {
-                lastRace.Weight = ScrapeLastWeight(lastRaceDocument, position);
-                lastRace.Odds = ScrapeLastOdds(lastRaceDocument, position);
-                lastRace.Analysis = ScrapeLastAnalysis(lastRaceDocument, position);
+                try
+                {
+                	lastRace.Weight = ScrapeLastWeight(lastRaceDocument, position);
+                }
+                catch (System.Exception ex)
+                {
+                    log.Error(errMsg + ": weight" + ex.Message);
+                }
+
+                try
+                {
+                	lastRace.Odds = ScrapeLastOdds(lastRaceDocument, position);
+                }
+                catch (System.Exception ex)
+                {
+                    log.Error(errMsg + ": odds");
+                }
+
+                try
+                {
+                	lastRace.Analysis = ScrapeLastAnalysis(lastRaceDocument, position);
+                }
+                catch (System.Exception ex)
+                {
+                    log.Error(errMsg + ": analysis");
+                }
+
                 try
                 {
                     if (position == 1)
@@ -62,7 +110,15 @@ namespace RacingWebScraper
             }
 
 
-            lastRace.WinningTime = ScrapeLastWinningTime(lastRaceDocument);
+            try
+            {
+            	lastRace.WinningTime = ScrapeLastWinningTime(lastRaceDocument);
+            }
+            catch (System.Exception ex)
+            {
+                log.Error(errMsg + ": odds");
+            }
+
             lastRace.Class = lastClass;
             lastRace.Position = positionInField;
             return lastRace;
@@ -98,9 +154,7 @@ namespace RacingWebScraper
 
         private string ScrapeLastAnalysis(IDocument lastRaceDocument, int position)
         {
-            const String entrantSelector = "div.hr-racing-runner-form-trainer-jockey-block";
-            var entrantElements = lastRaceDocument.QuerySelectorAll(entrantSelector);
-
+            var entrantElements = ScrapeEntrantsElements(lastRaceDocument);
             const String analysisSelector = "div.hr-racing-runner-ride-desc-info";
             return ScrapeTextContent(entrantElements[position - 1], analysisSelector);
         }
@@ -113,29 +167,31 @@ namespace RacingWebScraper
 
         private String ScrapeLastOdds(IDocument lastRaceDocument, int position)
         {
-            const String entrantSelector = "div.hr-racing-runner-position-container";
-            var entrantElements = lastRaceDocument.QuerySelectorAll(entrantSelector);
-
+            var entrantElements = ScrapeEntrantsElements(lastRaceDocument);
             const String oddsSelector = "span.hr-racing-runner-betting-info";
             return ScrapeTextContent(entrantElements[position - 1], oddsSelector);
         }
 
         private string ScrapeLastWeight(IDocument lastRaceDocument, int position)
         {
-            const String entrantSelector = "div.hr-racing-runner-position-container";
-            var entrantElements = lastRaceDocument.QuerySelectorAll(entrantSelector);
-
+            var entrantElements = ScrapeEntrantsElements(lastRaceDocument);
             const String selector = "div.hr-racing-runner-horse-sub-info > span:nth-child(2)";
             return ScrapeTextContent(entrantElements[position - 1], selector);
         }
+
+        private static IHtmlCollection<IElement> ScrapeEntrantsElements(IDocument document)
+        {
+            const String entrantSelector = "section.hr-racing-runner-wrapper";
+            return document.QuerySelectorAll(entrantSelector);
+        }
+
 
         private double ScrapeBeatenLengths(IDocument lastRaceDocument, int position)
         {
             // winner has no beaten lengths
             if (position == 1) return 0;
 
-            const String entrantSelector = "div.hr-racing-runner-position-container";
-            var entrantElements = lastRaceDocument.QuerySelectorAll(entrantSelector);
+            var entrantElements = ScrapeEntrantsElements(lastRaceDocument);
             if(entrantElements.Length == 0)
             {
                 log.Error(String.Format("0 entrants found in : {0}", lastRaceDocument.Url));
@@ -155,7 +211,7 @@ namespace RacingWebScraper
                 var textContent = ScrapeTextContent(e, select);
                 if (String.IsNullOrEmpty(textContent))
                 {
-                    log.Error(String.Format("No distance found in element : {0}, with selector : {1}m url : ", e, select, lastRaceDocument.Url));
+                    log.Error(String.Format("No distance found in element : {0}, with selector : {1}, url : {2} ", e, select, lastRaceDocument.Url));
                     return new double[] { -1, -1 };
                 }
 

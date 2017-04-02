@@ -13,11 +13,11 @@ namespace RacingWebScraper
 {
     public partial class SLifeRacingScraper
     {
-        const String entrantsSelector = "section.hr-racing-runner-wrapper";
+        //const String entrantsSelector = "section.hr-racing-runner-wrapper";
         async Task<List<Entrant>> ScrapeEntrantsAsync(IDocument document)
         {
 
-            var entrantsElements = document.QuerySelectorAll(entrantsSelector);
+            var entrantsElements = ScrapeEntrantsElements(document);
 
             log.Debug("Scraping Entrants :  " + document.Url);
             var parallelEntrants = new ConcurrentQueue<Entrant>();
