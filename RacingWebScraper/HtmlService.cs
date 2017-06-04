@@ -17,8 +17,15 @@ namespace RacingWebScraper
         public static String GetCanonicalUrl(AngleSharp.Dom.IDocument document)
         {
             if (document == null) throw new ArgumentNullException("document is null");
-            String url = document.QuerySelector("link[rel='canonical']").GetAttribute("href");
-            return url;
+            var url = document.QuerySelector("link[rel='canonical']").GetAttribute("href");
+            if (url == null)
+            {
+                return "";
+            }
+            else
+            {
+                return url;
+            }
         }
     }
 }

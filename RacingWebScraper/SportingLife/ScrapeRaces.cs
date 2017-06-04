@@ -69,9 +69,18 @@ namespace RacingWebScraper
                 var document = await HtmlService.GetDocumentAsync(stringMap["url"]).ConfigureAwait(false);
                 _currentRace = stringMap["url"];
                 _ntf.Notify("Started" + msg, Ntf.MESSAGE);
-                var race = await ScrapeRaceDetail(document, stringMap).ConfigureAwait(false);
-                _ntf.Notify("Finished" + msg, Ntf.MESSAGE);
-                races.Add(race);
+                try
+                {
+                	var race = await ScrapeRaceDetail(document, stringMap).ConfigureAwait(false);
+                    _ntf.Notify("Finished" + msg, Ntf.MESSAGE);
+                    races.Add(race);
+                }
+                catch (System.Exception e)
+                {
+                    log.Error(string.Format("Failed to scrape : {0} {1}\n{2}", stringMap["course"], stringMap["time"], e.Message));
+                    _ntf.Notify(string.Format("Failed to scrape : {0} {1}", stringMap["course"], stringMap["time"]), Ntf.ERROR);
+                }
+
                 currentProgress += inc;
                 _progress.Report(new BasicUpdate((int)currentProgress, string.Format("scraped race : {0} : {1}", stringMap["course"], stringMap["time"])));
             }
