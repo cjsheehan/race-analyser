@@ -19,7 +19,7 @@ namespace RacingWebScraper
 
             var entrantsElements = ScrapeEntrantsElements(document);
 
-            log.Debug("Scraping Entrants :  " + HtmlService.GetCanonicalUrl(document));
+            log.Debug("Scraping Entrants :  " + document.Url);
             var parallelEntrants = new ConcurrentQueue<Entrant>();
             var tasks = entrantsElements.Select(async element =>
             {
@@ -71,11 +71,11 @@ namespace RacingWebScraper
                 }
                 catch (InvalidScrapeException e)
                 {
-                    log.Error(String.Format("Failed to scrape entrant : {0}, {1}", entrant.HorseUrl, HtmlService.GetCanonicalUrl(document), e.Message));
+                    log.Error(String.Format("Failed to scrape entrant : {0}, {1}", entrant.HorseUrl, document.Url, e.Message));
                 }
                 catch (Exception e)
                 {
-                    log.Error(String.Format("Failed to scrape entrant : {0}, {1}", entrant.HorseUrl, HtmlService.GetCanonicalUrl(document), e.Message));
+                    log.Error(String.Format("Failed to scrape entrant : {0}, {1}", entrant.HorseUrl, document.Url, e.Message));
                 }
 
             });
@@ -100,7 +100,6 @@ namespace RacingWebScraper
             var profileDocument = await HtmlService.GetDocumentAsync(profileUrl).ConfigureAwait(false);
 
             // Get date of last race from profile
-            //const String dateSelector = "table.horse-results-table > tbody > tr:nth-child(1) > td:nth-child(1) > a"; // div.horse-profile-results > div > table > tbody > tr:nth-child(1) > td:nth-child(1) > a
             const String dateSelector = "div.horse-profile-results > div > table > tbody > tr:nth-child(1) > td:nth-child(1) > a";
             String lastRaceDateOnProfile = ScrapeTextContent(profileDocument, dateSelector);
             if (String.IsNullOrEmpty(lastRaceDateOnProfile)) return false;

@@ -56,7 +56,7 @@ namespace RacingWebScraper
 
             try
             {
-            	lastRace.Distance = ScrapeLastDistance(lastRaceDocument);
+            lastRace.Distance = ScrapeLastDistance(lastRaceDocument);
             }
             catch (System.Exception ex)
             {
@@ -65,7 +65,7 @@ namespace RacingWebScraper
 
             try
             {
-            	lastRace.Going = ScrapeLastGoing(lastRaceDocument);
+            lastRace.Going = ScrapeLastGoing(lastRaceDocument);
             }
             catch (System.Exception ex)
             {
@@ -74,7 +74,7 @@ namespace RacingWebScraper
 
             try
             {
-            	lastRace.Course = ScrapeLastCourse(lastRaceDocument);
+            lastRace.Course = ScrapeLastCourse(lastRaceDocument);
             }
             catch (System.Exception ex)
             {
@@ -85,7 +85,7 @@ namespace RacingWebScraper
             {
                 try
                 {
-                	lastRace.Weight = ScrapeLastWeight(lastRaceDocument, position);
+                lastRace.Weight = ScrapeLastWeight(lastRaceDocument, position);
                 }
                 catch (System.Exception ex)
                 {
@@ -94,7 +94,7 @@ namespace RacingWebScraper
 
                 try
                 {
-                	lastRace.Odds = ScrapeLastOdds(lastRaceDocument, position);
+                lastRace.Odds = ScrapeLastOdds(lastRaceDocument, position);
                 }
                 catch (System.Exception ex)
                 {
@@ -103,7 +103,7 @@ namespace RacingWebScraper
 
                 try
                 {
-                	lastRace.Analysis = ScrapeLastAnalysis(lastRaceDocument, position);
+                lastRace.Analysis = ScrapeLastAnalysis(lastRaceDocument, position);
                 }
                 catch (System.Exception ex)
                 {
@@ -134,7 +134,7 @@ namespace RacingWebScraper
 
             try
             {
-            	lastRace.WinningTime = ScrapeLastWinningTime(lastRaceDocument);
+            lastRace.WinningTime = ScrapeLastWinningTime(lastRaceDocument);
             }
             catch (System.Exception ex)
             {
@@ -232,7 +232,7 @@ namespace RacingWebScraper
                 var textContent = ScrapeTextContent(e, select);
                 if (String.IsNullOrEmpty(textContent))
                 {
-                    log.Error(String.Format("No distance found in element : {0}, with selector : {1}, url : {2} ", e, select, HtmlService.GetCanonicalUrl(lastRaceDocument)));
+                    log.Error(String.Format("No distance found in element : {0}, with selector : {1}m url : ", e, select, lastRaceDocument.Url));
                     return new double[] { -1, -1 };
                 }
 
