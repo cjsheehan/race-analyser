@@ -22,7 +22,7 @@ namespace Racing
         public String Course { get; set; }
         public String Class { get; set; }
         public int NumRunners { get; set; }
-        public PrizeList LastRacePrizes { get; set; }
+        public String LastRacePrizes { get; set; }
 
         public string Odds { get; set; }
 

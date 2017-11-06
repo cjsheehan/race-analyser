@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace RacingWebScraper
@@ -20,7 +21,7 @@ namespace RacingWebScraper
             // Get required data from profile
             var positionInField = ScrapeLastPositionInField(profileDocument.DocumentElement);
             var position = ScrapeLastPosition(profileDocument.DocumentElement);
-            var lastClass = ScrapeLastClass(profileDocument);
+						//var lastClass = ScrapeLastClass(profileDocument);
 
             // Get page for last race
             const String lastRaceUrlSelector = "td:nth-child(1) > a.horse-profile-racing-form-racecard-link";
@@ -53,6 +54,16 @@ namespace RacingWebScraper
             LastRace lastRace = new LastRace();
             String errMsg = "Failed to scrape last race data for " + horseName;
             if (!IsWeighedIn(lastRaceDocument)) return lastRace;
+
+
+	          try
+            {
+            lastRace.Class = ScrapeLastClass(lastRaceDocument);
+            }
+            catch (System.Exception ex)
+            {
+            	log.Error(errMsg + ": class");
+            }
 
             try
             {
@@ -110,6 +121,8 @@ namespace RacingWebScraper
                     log.Error(errMsg + ": analysis");
                 }
 
+
+
                 try
                 {
                     if (position == 1)
@@ -131,7 +144,6 @@ namespace RacingWebScraper
                 log.Info("Unknown position " + position);
             }
 
-
             try
             {
             lastRace.WinningTime = ScrapeLastWinningTime(lastRaceDocument);
@@ -141,7 +153,16 @@ namespace RacingWebScraper
                 log.Error(errMsg + ": odds");
             }
 
-            lastRace.Class = lastClass;
+						try
+						{
+							lastRace.LastRacePrizes = ScrapePrizes(lastRaceDocument);
+						}
+						catch (System.Exception ex)
+						{
+							log.Error(errMsg + ": prizes");
+						}
+
+						//lastRace.Class = lastClass;
             lastRace.Position = positionInField;
             return lastRace;
         }
@@ -158,12 +179,6 @@ namespace RacingWebScraper
             {
                 return false;
             }
-        }
-
-        private String ScrapeLastClass(IDocument lastRaceDocument)
-        {
-            const String selector = "div.horse-profile-results > div > table > tbody > tr:nth-child(1) > td:nth-child(5) > span:nth-child(4)";
-            return ScrapeTextContent(lastRaceDocument, selector).Replace(", ", "");
         }
 
         private string ScrapeLastCourse(IDocument lastRaceDocument)
@@ -185,6 +200,53 @@ namespace RacingWebScraper
             const String selector = "span.hr-racecard-weighed-in-wt > span";
             return ScrapeTextContent(lastRaceDocument, selector);
         }
+
+				private String ScrapeLastClass(IDocument lastRaceDocument)
+				{
+					String classInfo = "";
+					// (Grade 3) (National Course) (Class 1)
+					const String selector = "li.hr-racecard-summary-race-name.hr-racecard-summary-always-open";
+					String summary = ScrapeTextContent(lastRaceDocument, selector);
+
+					// check class
+					String rx = "\\(Class (\\d)\\)";
+					int raceClass = ScrapeIntFromTextContent(lastRaceDocument.DocumentElement, selector, rx);
+					classInfo = "C" + raceClass;
+
+					if (raceClass < 1)
+					{
+						return "";
+					}
+					else if (raceClass > 1)
+					{
+						return classInfo;
+					}
+					else if (raceClass.Equals(1))
+					{
+						rx = "\\(Grade (\\d)\\)";
+						int grade = ScrapeIntFromTextContent(lastRaceDocument.DocumentElement, selector, rx);
+
+						if (grade.Equals(-1))
+						{
+							if (summary.Contains("(Listed)"))
+							{
+								return classInfo + " Listed";
+							}
+						}
+						else
+						{
+							return classInfo + " G" + grade;
+						}
+					}
+
+					return classInfo;
+				}
+
+				private String ScrapePrizes(IDocument lastRaceDocument)
+				{
+					const String selector = "li.hr-racecard-summary-prizes > span:nth-child(1)";
+					return ScrapeTextContent(lastRaceDocument, selector).Replace("Winner", "");
+				}
 
         private String ScrapeLastOdds(IDocument lastRaceDocument, int position)
         {
