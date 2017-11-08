@@ -61,6 +61,7 @@
 #                                     1. Bugfix : going support "soft-.*"                              #
 #               xmlHorseBuilder v1.4: 06/11/17                                                         #
 #                                     1. Write extra Race class info                                   #
+#                                     2. Runner info columns now accessed via column defs              #
 ########################################################################################################
 
 use strict;
@@ -69,7 +70,7 @@ use XML::Simple;
 use Readonly;
 use Data::Dumper;
 use File::Path qw(make_path);
-use Spreadsheet::ParseExcel::Utility;
+use Spreadsheet::ParseExcel::Utility 'col2int';
       
 ########################################################################################################
 # Check arguments & options & global vars                                                              #
@@ -155,29 +156,30 @@ my $INFO = 'Info';
 ########################################################################################################
 
 my %cols = (
-    horse => 0,
-    pred_time => 1,
-    pred_adj_time => 2,
-    prev_pos => 3,
-    form => 4,
-    since_last => 5,
-    trainer => 6,
-    jockey => 7,
-    todays_weight => 8,
-    prev_weight => 9,
-    prev_class => 10,
-    prev_distance_str => 11,
-    prev_distance_yds => 12,
-    prev_beaten_lengths => 13,
-    actual_prev_distance => 14,
-    winning_time_str => 15,
-    winning_time_sec => 16,
-    prev_going_str=> 17,
-    prev_going_ordinal => 18,
-    avg_yds_per_sec => 19,
-    actual_yds_per_sec => 20,
-    diff_yds_per_sec => 21,
-    pred_yds_per_sec => 22
+    horse => "A",
+    pred_time => "B",
+    pred_adj_time => "C",
+    prev_pos => "D",
+    form => "E",
+    since_last => "F",
+    trainer => "G",
+    jockey => "H",
+    todays_weight => "I",
+    prev_weight => "J",
+    prev_prize => "K",
+    prev_class => "L",
+    prev_distance_str => "M",
+    prev_distance_yds => "N",
+    prev_beaten_lengths => "O",
+    actual_prev_distance => "P",
+    winning_time_str => "Q",
+    winning_time_sec => "R",
+    prev_going_str=> "S",
+    prev_going_ordinal => "T",
+    avg_yds_per_sec => "U",
+    actual_yds_per_sec => "V",
+    diff_yds_per_sec => "W",
+    pred_yds_per_sec => "X"
 );
 
 ########################################################################################################
@@ -280,41 +282,41 @@ foreach my $date (keys %g_allDates)
 # subroutines                                                                                          #
 ########################################################################################################
 
-
 sub addDynamicFormulas {
   print "addDynamicFormulas\n" if $debug;
   my $dest_sheet_ref = shift;
   my $raceSize = shift;
   my $row = 11;
+   
   for my $iHorses ( 0..$raceSize ) 
   {    
     my $form_idx = $row + 1;
-    my $actYdsFormula = "=IF(N$form_idx >= 0, M$form_idx - (N$form_idx*2.6), 0)";
-    my $actSpeedFormula = "=IF(Q$form_idx >= 0, O$form_idx/Q$form_idx,0)";
-    my $speedDiffFormula = "=(100/T$form_idx)*(U$form_idx-T$form_idx)";
-    my $predSpeedFormula = "=D6+(D6*(V$form_idx/100))";
-    my $predTimeFormula = "=C5/W$form_idx";
-    my $jockeyTimeFormula  = "=B$form_idx + G$form_idx";
-    my $sec2TimeFormula  = "=(((C5-M$form_idx)/220)*2)+B$form_idx";
+    my $actYdsFormula = "=IF($cols{prev_beaten_lengths}$form_idx >= 0, $cols{prev_distance_yds}$form_idx - ($cols{prev_beaten_lengths}$form_idx*2.6), 0)";
+    my $actSpeedFormula = "=IF($cols{winning_time_sec}$form_idx >= 0, $cols{actual_prev_distance}$form_idx/$cols{winning_time_sec}$form_idx,0)";
+    my $speedDiffFormula = "=(100/$cols{avg_yds_per_sec}$form_idx)*($cols{actual_yds_per_sec}$form_idx - $cols{avg_yds_per_sec}$form_idx)";
+    my $predSpeedFormula = "=D6+(D6*($cols{diff_yds_per_sec}$form_idx/100))";
+    my $predTimeFormula = "=C5/$cols{pred_yds_per_sec}$form_idx";
+    my $jockeyTimeFormula  = "=$cols{pred_time}$form_idx + G$form_idx";
+    my $sec2TimeFormula  = "=(((C5-$cols{prev_distance_yds}$form_idx)/220)*2)+$cols{pred_time}$form_idx";
     
-    $$dest_sheet_ref->write_formula($row, 14, $actYdsFormula, $floatFormatCB);
-    $$dest_sheet_ref->write_formula($row, 20, $actSpeedFormula, $floatFormatCB);
+    $$dest_sheet_ref->write_formula($row, col2int($cols{actual_prev_distance}), $actYdsFormula, $floatFormatCB);
+    $$dest_sheet_ref->write_formula($row, col2int($cols{actual_yds_per_sec}), $actSpeedFormula, $floatFormatCB);
     my $lookupAvSpeedFormula;
     if($g_jumps == 0)
     {
       #Flat race
-      $lookupAvSpeedFormula = "=VLOOKUP(S$form_idx,I2:J8,2,FALSE)";
+      $lookupAvSpeedFormula = "=VLOOKUP($cols{prev_going_ordinal}$form_idx,I2:J8,2,FALSE)";
     }
     else
     {
-      $lookupAvSpeedFormula = "=(INDEX(\$I\$2:\$K\$8,MATCH(S$form_idx,\$I\$2:\$I\$8,0),2)*(O$form_idx/1000)) + INDEX(\$I\$2:\$K\$8,MATCH(S$form_idx,\$I\$2:\$I\$8,0),3)";
+      $lookupAvSpeedFormula = "=(INDEX(\$I\$2:\$K\$8,MATCH($cols{prev_going_ordinal}$form_idx,\$I\$2:\$I\$8,0),2)*($cols{actual_prev_distance}$form_idx/1000)) + INDEX(\$I\$2:\$K\$8,MATCH($cols{prev_going_ordinal}$form_idx,\$I\$2:\$I\$8,0),3)";
     }
 
-    $$dest_sheet_ref->write_formula($row, 19, $lookupAvSpeedFormula, $floatFormatCB);   
-    $$dest_sheet_ref->write_formula($row, 21, $speedDiffFormula, $floatFormatCB);
-    $$dest_sheet_ref->write_formula($row, 22, $predSpeedFormula, $floatFormatCB);
-    $$dest_sheet_ref->write_formula($row, 1, $predTimeFormula, $floatFormatCB);
-    $$dest_sheet_ref->write_formula($row, 2, $sec2TimeFormula, $floatFormatCB);
+    $$dest_sheet_ref->write_formula($row, col2int($cols{avg_yds_per_sec}), $lookupAvSpeedFormula, $floatFormatCB);   
+    $$dest_sheet_ref->write_formula($row, col2int($cols{diff_yds_per_sec}), $speedDiffFormula, $floatFormatCB);
+    $$dest_sheet_ref->write_formula($row, col2int($cols{pred_yds_per_sec}), $predSpeedFormula, $floatFormatCB);
+    $$dest_sheet_ref->write_formula($row, col2int($cols{pred_time}), $predTimeFormula, $floatFormatCB);
+    $$dest_sheet_ref->write_formula($row, col2int($cols{pred_adj_time}), $sec2TimeFormula, $floatFormatCB);
     $row++;
   }
 }
@@ -701,10 +703,6 @@ sub formatDateTime {
   return $res;
 }
 
-
-
-sub ltr { ("A".."ZZZ")[@_] }
-
 sub writeHorseInfo {
   print "writeHorseInfo\n" if $debug;
   my $dest_sheet_ref = shift;
@@ -734,6 +732,7 @@ sub writeHorseInfo {
     my $originalRating = "Rating: ";
     my $formWatch = "";
     my $lastRan = "";
+    my $col;
            
     for my $horseKey (keys %{ $horse })
     {
@@ -741,23 +740,24 @@ sub writeHorseInfo {
       my $localFormat = $strFormatGreenCB;
       if($HORSE_NAME eq $horseKey)
       {    
-        $$dest_sheet_ref->write_url(($row + 1), $cols{'horse'}, $horse->{$HORSE_URL}, $horse->{$HORSE_NAME}, $entryFormatUrl );
+        $col = $cols{horse};
+        $$dest_sheet_ref->write_url(($row + 1), col2int($col), $horse->{$HORSE_URL}, $horse->{$HORSE_NAME}, $entryFormatUrl );
       }
       elsif($TRAINER_NAME eq $horseKey)
       {
-        $$dest_sheet_ref->write_url(($row + 1), $cols{'trainer'}, $horse->{$TRAINER_URL}, $horse->{$TRAINER_NAME}, $entryFormatUrl );
+        $$dest_sheet_ref->write_url(($row + 1), col2int($cols{trainer}), $horse->{$TRAINER_URL}, $horse->{$TRAINER_NAME}, $entryFormatUrl );
       }
       elsif($WEIGHT eq $horseKey)
       {
         my $weight = $horse->{$WEIGHT};
         $weight =~ s/(\d+-\d+).*/$1/;
-        $$dest_sheet_ref->write(($row + 1), $cols{'todays_weight'}, $weight, $entryFormat1);
+        $$dest_sheet_ref->write(($row + 1), col2int($cols{todays_weight}), $weight, $entryFormat1);
       }
       elsif($FORM eq $horseKey)
       {
         if(ref($horse->{$FORM}) ne "HASH") 
         {
-            $$dest_sheet_ref->write(($row + 1), $cols{'form'}, $horse->{$FORM}, $strFormatCB );
+            $$dest_sheet_ref->write(($row + 1), col2int($cols{form}), $horse->{$FORM}, $strFormatCB );
         }
      
         # my $winPrize = $horse->{$key}{'PrizeMoney'}{'decimal'}[0];
@@ -774,7 +774,7 @@ sub writeHorseInfo {
       {
         if(ref($horse->{$LAST_RAN}) ne "HASH")
         {
-          $$dest_sheet_ref->write(($row + 1), $cols{'since_last'}, $horse->{$LAST_RAN}, $strFormatCB);
+          $$dest_sheet_ref->write(($row + 1), col2int($cols{since_last}), $horse->{$LAST_RAN}, $strFormatCB);
         }
       }
       elsif($LAST_RACE eq $horseKey)
@@ -785,16 +785,21 @@ sub writeHorseInfo {
             {
                 my $prevWgt = $horse->{$LAST_RACE}{$WEIGHT};
                 $prevWgt =~ s/(\d+-\d+).*/$1/;
-                $$dest_sheet_ref->write(($row + 1), $cols{prev_weight}, $prevWgt, $entryFormat1);   
+                $$dest_sheet_ref->write(($row + 1), col2int($cols{prev_weight}), $prevWgt, $entryFormat1);   
             }
             elsif($POSITION eq $key)
             {
                 my $format = getFormat($prevFullPos, "str", "yes");
-                $$dest_sheet_ref->write(($row + 1), $cols{prev_pos}, $prevFullPos, $format) if $prevFullPos;
+                $$dest_sheet_ref->write(($row + 1), col2int($cols{prev_pos}), $prevFullPos, $format) if $prevFullPos;
             } 
             elsif($PRIZE eq $key)
             {
-                $prevPrize = $horse->{$LAST_RACE}{$PRIZE};
+                my $prize =  $horse->{$LAST_RACE}{$PRIZE};
+                if(ref($horse->{$LAST_RACE}{$PRIZE}) ne "HASH")
+                {
+                    $$dest_sheet_ref->write(($row + 1), col2int($cols{prev_prize}), $prize, $entryFormatRight) if $prize;                
+                }
+                
             } 
             elsif($GOING eq $key)
             {
@@ -803,21 +808,20 @@ sub writeHorseInfo {
                 {
                   my $convGoing = convertGoing($going);
                   my $format = getFormat($convGoing, "int", "yes");       
-                  $$dest_sheet_ref->write(($row + 1), $cols{prev_going_str}, $going, $entryFormatLeft);
-                  $$dest_sheet_ref->write_number(($row + 1), $cols{prev_going_ordinal}, $convGoing, $format);
+                  $$dest_sheet_ref->write(($row + 1), col2int($cols{prev_going_str}), $going, $entryFormatLeft);
+                  $$dest_sheet_ref->write_number(($row + 1), col2int($cols{prev_going_ordinal}), $convGoing, $format);
                 }
                 elsif(!$going && $prevExists)
                 {       
                     $going = -1;
                     my $format = getFormat($going, "int", "no"); 
-                    $$dest_sheet_ref->write_number(($row + 1), $cols{prev_going_ordinal}, $going, $format);
+                    $$dest_sheet_ref->write_number(($row + 1), col2int($cols{prev_going_ordinal}), $going, $format);
                 }	
             }
             elsif($BEATEN_LENGTHS eq $key)
             {
                 my $format = $entryFormat1;
                 my $prevBeatDist = $horse->{$LAST_RACE}{$BEATEN_LENGTHS};
-                print $prevPos . " " . $prevBeatDist . "\n";
   
                 if($prevFullPos && $prevFullPos =~ /^[A-Z]+$/)
                 {
@@ -825,7 +829,7 @@ sub writeHorseInfo {
                     $prevBeatDist =  "N/A";    
                     $format = getFormat(1, "str", "yes");
                 }
-                elsif($prevPos > 1 && $prevBeatDist == -1)
+                elsif($prevPos ne "No Form" && $prevPos ne "-" && $prevPos > 1 && $prevBeatDist == -1)
                 {
                     ## race position but no beaten distance
                     $prevBeatDist = -1;
@@ -870,7 +874,7 @@ sub writeHorseInfo {
                         $format = getFormat($prevBeatDist, "float", "yes");
                     }
                 }
-                $$dest_sheet_ref->write(($row + 1), $cols{prev_beaten_lengths}, $prevBeatDist, $format);
+                $$dest_sheet_ref->write(($row + 1), col2int($cols{prev_beaten_lengths}), $prevBeatDist, $format);
             }      
             elsif($ANALYSIS eq $key)
             {
@@ -882,15 +886,15 @@ sub writeHorseInfo {
             elsif($CLASS eq $key)
             {
                 my $prevClass = $horse->{$LAST_RACE}{$CLASS};
-                $$dest_sheet_ref->write(($row + 1), $cols{prev_class}, $prevClass, $entryFormat1) if ref $prevClass ne "HASH"; 
+                $$dest_sheet_ref->write(($row + 1), col2int($cols{prev_class}), $prevClass, $entryFormat1) if ref $prevClass ne "HASH"; 
             }
             elsif($DISTANCE eq $key)
             {
                 my $dist = $horse->{$LAST_RACE}{$DISTANCE};
                 my $convDist = convertDistance($dist);
                 my $format = getFormat($convDist, "int", "no");
-                $$dest_sheet_ref->write(($row + 1), $cols{prev_distance_str}, $dist, $entryFormat1);
-                $$dest_sheet_ref->write(($row + 1), $cols{prev_distance_yds}, $convDist, $format);
+                $$dest_sheet_ref->write(($row + 1), col2int($cols{prev_distance_str}), $dist, $entryFormat1);
+                $$dest_sheet_ref->write(($row + 1), col2int($cols{prev_distance_yds}), $convDist, $format);
             }
             elsif($WINNING_TIME eq $key)
             {
@@ -900,14 +904,14 @@ sub writeHorseInfo {
                 {
                     $convTime = convertTime($winTime);
                     my $format = getFormat($convTime, "float", "no");
-                    $$dest_sheet_ref->write(($row + 1), $cols{winning_time_str}, $winTime, $entryFormat1);
-                    $$dest_sheet_ref->write(($row + 1), $cols{winning_time_sec}, $convTime, $format);
+                    $$dest_sheet_ref->write(($row + 1), col2int($cols{winning_time_str}), $winTime, $entryFormat1);
+                    $$dest_sheet_ref->write(($row + 1), col2int($cols{winning_time_sec}), $convTime, $format);
                 }
                 else
                 {
                     $convTime = -1;
                     my $format = getFormat($convTime, "float", "yes");
-                    $$dest_sheet_ref->write(($row + 1), $cols{winning_time_sec}, $convTime, $format);
+                    $$dest_sheet_ref->write(($row + 1), col2int($cols{winning_time_sec}), $convTime, $format);
                 }
             }               
             
@@ -932,8 +936,8 @@ sub writeHorseInfo {
               $format = $entryFormatUrlRedBg;
             }
           }           
-          print "7 " . $cols{jockey};
-          $$dest_sheet_ref->write_url(($row + 1), 7, $horse->{$JOCKEY_URL}, $horse->{$JOCKEY_NAME}, $format);
+
+          $$dest_sheet_ref->write_url(($row + 1), col2int($cols{jockey}), $horse->{$JOCKEY_URL}, $horse->{$JOCKEY_NAME}, $format);
         }
       }
       elsif($RATING eq $horseKey)
@@ -948,11 +952,9 @@ sub writeHorseInfo {
     $row++;	
     
     # Write Comments
-    print $prevPrize;
     my $comment = $originalRating . "\n" . $formWatch . "\n" . $prevPrize;
-    $$dest_sheet_ref->write_comment($row, $cols{horse}, $comment, width => 350 , height => 200);
-    $$dest_sheet_ref->write_comment($row, $cols{prev_pos}, $lastAnalysis, width => 200 , height => 100);
-    $$dest_sheet_ref->write_comment($row, $cols{prev_class}, $prevPrize, width => 200 , height => 100);
+    $$dest_sheet_ref->write_comment($row, col2int($cols{horse}), $comment, width => 350 , height => 200);
+    $$dest_sheet_ref->write_comment($row, col2int($cols{prev_pos}), $lastAnalysis, width => 200 , height => 100);
   }
   addDynamicFormulas(\$$dest_sheet_ref, $raceSize, $g_jumps);
 }
@@ -1122,9 +1124,9 @@ sub setCellDimension {
   $$dest_sheet_ref->set_column(7, 7, 14);
   $$dest_sheet_ref->set_column(8, 8, 8);
   $$dest_sheet_ref->set_column(9, 9, 8);
-  #$$dest_sheet_ref->set_column(10, 10, 10);
-  $$dest_sheet_ref->set_column(14, 14, 10);
-  $$dest_sheet_ref->set_column(17, 17, 24);
+  $$dest_sheet_ref->set_column(10, 10, 15);
+  $$dest_sheet_ref->set_column(15, 15, 10);
+  $$dest_sheet_ref->set_column(18, 18, 24);
   $$dest_sheet_ref->set_row($infoStartRow, 25);
 }
 
@@ -1149,29 +1151,30 @@ sub writeHorseHeadings {
   my $dest_sheet_ref = shift;
   my $row = $infoStartRow;
   my $col = 0;
-  $$dest_sheet_ref->write($row, ($col  ),  "Horse Name", $headFormat2);
-  $$dest_sheet_ref->write($row, ($col+1),  "New Time (s)", $headFormat2);
-  $$dest_sheet_ref->write($row, ($col+2),  "2sec Time (s)", $headFormat2);
-  $$dest_sheet_ref->write($row, ($col+3),  "Prev Pos", $headFormat2);
-  $$dest_sheet_ref->write($row, ($col+4),  "Form", $headFormat2);
-  $$dest_sheet_ref->write($row, ($col+5),  "Since Last", $headFormat2);
-  $$dest_sheet_ref->write($row, ($col+6),  "Trainer", $headFormat2);
-  $$dest_sheet_ref->write($row, ($col+7),  "Jockey", $headFormat2);
-  $$dest_sheet_ref->write($row, ($col+8),  "Wgt", $headFormat2);
-  $$dest_sheet_ref->write($row, ($col+9),  "Prev Wgt", $headFormat2);
-  $$dest_sheet_ref->write($row, ($col+10), "Prev Class", $headFormat2);
-  $$dest_sheet_ref->write($row, ($col+11), "Prev Dist", $headFormat2);
-  $$dest_sheet_ref->write($row, ($col+12), "Prev Dist(yds)", $headFormat2);
-  $$dest_sheet_ref->write($row, ($col+13), "Prev BeatLen", $headFormat2);
-  $$dest_sheet_ref->write($row, ($col+14), "Actual Dist(yds)", $headFormat2);
-  $$dest_sheet_ref->write($row, ($col+15), "Winning Time", $headFormat2);
-  $$dest_sheet_ref->write($row, ($col+16), "Winning Time(s)", $headFormat2);
-  $$dest_sheet_ref->write($row, ($col+17), "Prev Going", $headFormat2);
-  $$dest_sheet_ref->write($row, ($col+18), "Prev GoingNo", $headFormat2);
-  $$dest_sheet_ref->write($row, ($col+19), "Average yds/s", $headFormat2);
-  $$dest_sheet_ref->write($row, ($col+20), "Actual y/s", $headFormat2);
-  $$dest_sheet_ref->write($row, ($col+21), "Actual-Av y/s (%)", $headFormat2);
-  $$dest_sheet_ref->write($row, ($col+22), "Pred Speed yds/s", $headFormat2);
+  $$dest_sheet_ref->write($row, col2int($cols{horse}),  "Horse Name", $headFormat2);
+  $$dest_sheet_ref->write($row, col2int($cols{pred_time}),  "New Time (s)", $headFormat2);
+  $$dest_sheet_ref->write($row, col2int($cols{pred_adj_time}),  "2sec Time (s)", $headFormat2);
+  $$dest_sheet_ref->write($row, col2int($cols{prev_pos}),  "Prev Pos", $headFormat2);
+  $$dest_sheet_ref->write($row, col2int($cols{form}),  "Form", $headFormat2);
+  $$dest_sheet_ref->write($row, col2int($cols{since_last}),  "Since Last", $headFormat2);
+  $$dest_sheet_ref->write($row, col2int($cols{trainer}),  "Trainer", $headFormat2);
+  $$dest_sheet_ref->write($row, col2int($cols{jockey}),  "Jockey", $headFormat2);
+  $$dest_sheet_ref->write($row, col2int($cols{todays_weight}),  "Wgt", $headFormat2);
+  $$dest_sheet_ref->write($row, col2int($cols{prev_weight}),  "Prev Wgt", $headFormat2);
+  $$dest_sheet_ref->write($row, col2int($cols{prev_prize}),  "Prev Prize", $headFormat2);
+  $$dest_sheet_ref->write($row, col2int($cols{prev_class}), "Prev Class", $headFormat2);
+  $$dest_sheet_ref->write($row, col2int($cols{prev_distance_str}), "Prev Dist", $headFormat2);
+  $$dest_sheet_ref->write($row, col2int($cols{prev_distance_yds}), "Prev Dist(yds)", $headFormat2);
+  $$dest_sheet_ref->write($row, col2int($cols{prev_beaten_lengths}), "Prev BeatLen", $headFormat2);
+  $$dest_sheet_ref->write($row, col2int($cols{actual_prev_distance}), "Actual Dist(yds)", $headFormat2);
+  $$dest_sheet_ref->write($row, col2int($cols{winning_time_str}), "Winning Time", $headFormat2);
+  $$dest_sheet_ref->write($row, col2int($cols{winning_time_sec}), "Winning Time(s)", $headFormat2);
+  $$dest_sheet_ref->write($row, col2int($cols{prev_going_str}), "Prev Going", $headFormat2);
+  $$dest_sheet_ref->write($row, col2int($cols{prev_going_ordinal}), "Prev GoingNo", $headFormat2);
+  $$dest_sheet_ref->write($row, col2int($cols{avg_yds_per_sec}), "Average yds/s", $headFormat2);
+  $$dest_sheet_ref->write($row, col2int($cols{actual_yds_per_sec}), "Actual y/s", $headFormat2);
+  $$dest_sheet_ref->write($row, col2int($cols{diff_yds_per_sec}), "Actual-Av y/s (%)", $headFormat2);
+  $$dest_sheet_ref->write($row, col2int($cols{pred_yds_per_sec}), "Pred Speed yds/s", $headFormat2);
 }
 
 sub writeVersionInfo {
