@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -31,6 +32,7 @@ namespace Betabelter
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+						System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
             Application.Run(new RacingForm());
         }
 

@@ -29,10 +29,10 @@ namespace RacingWebScraper
         private INotify _ntf;
         private bool _isRunning = false; // Allow only a single long running asyn operation at a time
 
-        private const String SITE_PREFIX = "http://www.sportinglife.com";
+        private const String SITE_PREFIX = "https://www.sportinglife.com";
         private const String HURDLE = "Hurdle";
         private const String CHASE = "Chase";
-        private String ROOT_CARDS_URI = @"http://www.sportinglife.com/racing/racecards/";
+        private String ROOT_CARDS_URI = @"https://www.sportinglife.com/racing/racecards/";
         private List<IRaceHeader> _headers = null;
         private IProgress<BasicUpdate> _progress;
 
@@ -78,6 +78,12 @@ namespace RacingWebScraper
                     String date = String.Format("{0:yyyy-MM-dd}", dt);
                     String uri = ROOT_CARDS_URI + date;
                     var document = await HtmlService.GetDocumentAsync(uri).ConfigureAwait(false);
+
+									if(document == null)
+									{
+										log.Error("Failed to get meetings");
+										return null;
+									}
                     var meetings = document.QuerySelectorAll(meetingSelector);
 
                     double currentProgress = 0;

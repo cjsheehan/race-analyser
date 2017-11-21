@@ -100,11 +100,18 @@ namespace RacingWebScraper
             race.Distance = ScrapeDistance(document);
             race.Title = ScrapeRaceTitle(document);
             race.NumberOfRunners = ScrapeNumberOfRunners(document);
+						race.WinPrize = ScrapeWinPrize(document);
             race.Entrants = await ScrapeEntrantsAsync(document).ConfigureAwait(false);
             race.Info = ScrapeExtraInfo(document);
             Console.WriteLine("Finished Entrants" + race.Course + race.Time);
             return race;
         }
+
+				private string ScrapeWinPrize(IDocument document)
+				{
+					var selector = "li.hr-racecard-summary-prizes > span:nth-child(1)";
+					return ScrapeTextContent(document, selector).Replace("Winner", "");
+				}
 
         private String ScrapeExtraInfo(IDocument document)
         {
@@ -242,45 +249,7 @@ namespace RacingWebScraper
             return horseData;
         }
 
-        //async Task<List<Entrant>> ScrapeRunnersParallel(IDocument document)
-        //{
-        //    const String runnerSelector = "div.hr-racing-runner-key-info-container";
-        //    var runners = document.QuerySelectorAll(runnerSelector);
-
-        //    if (runners == null | runners.Length == 0)
-        //    {
-        //        String msg = "no runners found";
-        //        log.Error(msg);
-        //        throw new InvalidScrapeException(msg);
-        //    }
-
-        //    InitProgressHandler(runners.Length);
-        //    ConcurrentQueue<String> parallelHorses = new ConcurrentQueue<String>();
-        //    Parallel.ForEach(runners, currentRunner =>
-        //    {
-        //        if (currentRunner != null)
-        //        {
-        //            String horseName = ScrapeRunnerName(currentRunner);
-        //            parallelHorses.Enqueue(horseName);
-        //            //ScrapeHorseCompleted(horseName);
-        //        }
-        //        else
-        //        {
-        //            _ntf.Notify("No Horse data to scrape", Ntf.WARNING);
-        //        }
-
-        //    });
-
-        //    List<String> horses = new List<String>();
-        //    String horseOut;
-        //    while (parallelHorses.TryDequeue(out horseOut))
-        //    {
-        //        horses.Add(horseOut);
-        //    }
-
-        //    return horses;
-        //}
-
+      
         private List<String> ScrapeRunners(IDocument document)
         {
             const String runnerSelector = "div.hr-racing-runner-key-info-container";

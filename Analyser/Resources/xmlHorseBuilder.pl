@@ -62,6 +62,9 @@
 #               xmlHorseBuilder v1.4: 06/11/17                                                         #
 #                                     1. Write extra Race class info                                   #
 #                                     2. Runner info columns now accessed via column defs              #
+#               xmlHorseBuilder v1.5: 21/11/17                                                         #
+#                                     1. Write todays race win prize money                             #
+#                                     2. Bugfix: race time < min now writes correctly                  #
 ########################################################################################################
 
 use strict;
@@ -77,7 +80,7 @@ use Spreadsheet::ParseExcel::Utility 'col2int';
 ########################################################################################################
 my $loc = $ARGV[1];
 my $sheetsLoc = $loc . "/";
-my $version = "v1.4";
+my $version = "v1.5";
 my $debug = 0;
 my $debugFH;
 my $debugFile = $loc  . "xmlHorseDEBUG.txt";
@@ -123,6 +126,7 @@ my $IS_FLAT_RACE = 'Flat';
 my $DISTANCE = 'Distance';
 my $GOING = 'Going';
 my $CATEGORY = 'Category';
+my $WIN_PRIZE = 'WinPrize';
 my $NUM_RUNNERS = 'NumberOfRunners';
 my $ENTRANTS = 'Entrants';
 my $ENTRANT = 'Entrant';
@@ -338,7 +342,7 @@ sub convertGoing {
     #Good/Soft
     $goingTable{'5'} = [ qr{^g.*d/s.*t.*}i, qr{^s.*d/s.*w.*}i, qr{^g.*d to s.*t.*}i ];
     #Soft
-    $goingTable{'6'}   = [ qr{^s.*t,?$}i, qr{^Soft,.*$}i, qr{^Soft-.*}i ];
+    $goingTable{'6'}   = [ qr{^s.*t,?$}i, qr{^Soft,.*$}i, qr{^Soft-.*}i, qr{^Soft .+}i ];
     #Heavy
     $goingTable{'7'}  = [ qr{^h.*y.*}i ];
   }
@@ -353,7 +357,7 @@ sub convertGoing {
     #Good/Soft
     $goingTable{'4'} = [ qr{^g.*d/s.*t.*}i, qr{^s.*d/s.*w.*}i, qr{^g\S+d to s.*t.*}i ];
     #Soft
-    $goingTable{'5'}   = [ qr{^s.*t$}i, qr{^s.*t,.*$}i, qr{^s.*t-.*$}i, qr{^s.*t \(.*$}i ];
+    $goingTable{'5'}   = [ qr{^s.*t$}i, qr{^s.*t,.*$}i, qr{^s.*t-.*$}i, qr{^s.*t \(.*$}i, qr{^S.*t}i];
     #Soft/Heavy
     $goingTable{'6'}   = [ qr{^s.*t/h.*y,?.*$}i, qr{^s.*t to h.*y,?.*$}i ];
     #Heavy
@@ -460,6 +464,10 @@ sub convertTime {
   if($time =~ /(\d+)m *(\d+\.\d*)s/)
   {
     $convTime = (60 * $1) + $2;
+  }
+  elsif ($time =~ /(\d+\.\d*)s/)
+  {
+    $convTime = $1;
   }
   else
   {
@@ -625,13 +633,8 @@ sub writeRaceInfo {
   my $category = $g_activeRace->{$CATEGORY};
   $$dest_sheet_ref->write(($row+6), $col, $category, $entryFormat1) if ref $g_activeRace->{$CATEGORY} ne 'HASH';
  
-  my $currency = $g_activeRace->{'Prizes'}{'Currency'};
-  my $winPrize = $g_activeRace->{'Prizes'}{'PrizeMoney'}{'decimal'}[0];
-  if($currency ne "UNKNOWN") 
-  {
-    $$dest_sheet_ref->write(($row+7), $col, $currency, $entryFormat1);
-  }
-  $$dest_sheet_ref->write(($row+7), ($col+1), $winPrize , $entryFormat1);
+  my $winPrize = $g_activeRace->{$WIN_PRIZE};
+  $$dest_sheet_ref->write(($row+7), ($col), $winPrize , $entryFormat1);
 }
 
 sub getFormat {

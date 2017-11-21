@@ -48,6 +48,7 @@ namespace Racing
         public uint? MinAge { get; set; }
         public uint? MaxAge { get; set; }
         public PrizeList Prizes { get; set; }
+				public string WinPrize { get; set; }
         public bool Flat { get; set; }
         public string Distance { get; set; }
         public uint TotalYds { get; set; }
@@ -77,6 +78,7 @@ namespace Racing
                 + "MaxOR :" + MaxOR + Environment.NewLine + "\t\t"
                 + "MinAge :" + MinAge + Environment.NewLine + "\t\t"
                 + "MaxAge :" + MaxAge + Environment.NewLine + "\t\t"
+								+ "WinPrize :" + WinPrize + Environment.NewLine + "\t\t"
                 + "Prizes :" + string.Join(",", Prizes) + Environment.NewLine + "\t\t"
                 + "Date :" + Date + Environment.NewLine + "\t\t"
                 + "Flat :" + Flat + Environment.NewLine + "\t\t"
