@@ -100,7 +100,7 @@ namespace RacingWebScraper
             var profileDocument = await HtmlService.GetDocumentAsync(profileUrl).ConfigureAwait(false);
 
             // Get date of last race from profile
-            const String dateSelector = "div.horse-profile-results > div > table > tbody > tr:nth-child(1) > td:nth-child(1) > a";
+            const String dateSelector = "div.profile-results > div > table > tbody > tr:nth-child(1) > td:nth-child(1) > a";
             String lastRaceDateOnProfile = ScrapeTextContent(profileDocument, dateSelector);
             if (String.IsNullOrEmpty(lastRaceDateOnProfile)) return false;
 
