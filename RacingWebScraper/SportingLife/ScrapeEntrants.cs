@@ -18,6 +18,9 @@ namespace RacingWebScraper
         {
 
             var entrantsElements = ScrapeEntrantsElements(document);
+            const String dateSelector = ".hr-racing-racecard-heading-text > h1 > small";
+            String strRaceDate = ScrapeTextContent(document, dateSelector);
+            var raceDate = Convert.ToDateTime(strRaceDate);
 
             log.Debug("Scraping Entrants :  " + document.Url);
             var parallelEntrants = new ConcurrentQueue<Entrant>();
@@ -45,9 +48,10 @@ namespace RacingWebScraper
 
                     log.Debug("In Entrant " + entrant.HorseName);
                     // Test whether profile contains valid last ran data
-                    // SL: only displays races where runner finished race.
+                    // SL: only displays races where runner finished race (If horse is
+                    // non-finisher data is in different table for also rans)
                     // Therefore needs compared to last ran days from racecard
-                    var isValid = await IsLastRanDataValidAsync(element).ConfigureAwait(false);
+                    var isValid = await IsLastRanDataValidAsync(element, raceDate).ConfigureAwait(false);
 
                     if (isValid)
                     {
@@ -93,7 +97,7 @@ namespace RacingWebScraper
             return entrants;
         }
 
-        async Task<bool> IsLastRanDataValidAsync(IElement element)
+        async Task<bool> IsLastRanDataValidAsync(IElement element, DateTime dtRaceDate)
         {
             // Get last ran page form horse profile
             var profileUrl = ScrapeHorseUrl(element);
@@ -108,9 +112,9 @@ namespace RacingWebScraper
             int lastRan = ScrapeHorseLastRan(element);
 
             DateTime dtLast = Convert.ToDateTime(lastRaceDateOnProfile);
-            DateTime dtNow = DateTime.Today;
-            double difference = (dtNow - dtLast).TotalDays;
+            double difference = (dtRaceDate - dtLast).TotalDays;
 
+            // lastRan -1 >= difference <= lastRan + 1 
             if (difference >= lastRan - 1 && difference <= lastRan + 1)
             {
                 return true;
