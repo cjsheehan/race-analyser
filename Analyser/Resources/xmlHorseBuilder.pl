@@ -782,7 +782,7 @@ sub writeHorseInfo {
       }
       elsif($LAST_RACE eq $horseKey)
       {
-        for my $key (keys $horse->{$LAST_RACE})
+        for my $key (keys %{ $horse->{$LAST_RACE} })
         {
             if($WEIGHT eq $key)
             {
