@@ -8,6 +8,10 @@ using System.ComponentModel;
 using System.Threading.Tasks;
 using AngleSharp;
 using AngleSharp.Parser.Html;
+using AngleSharp.Dom.Html;
+using AngleSharp.Dom;
+using Racing.Classes;
+using Newtonsoft.Json;
 
 namespace RacingWebScraper
 {
@@ -32,16 +36,21 @@ namespace RacingWebScraper
         private const String SITE_PREFIX = "https://www.sportinglife.com";
         private const String HURDLE = "Hurdle";
         private const String CHASE = "Chase";
-        private String ROOT_CARDS_URI = @"https://www.sportinglife.com/racing/racecards/";
+        private String ROOT_CARDS_URI = @"https://www.sportinglife.com/racing/racecards";
         private List<IRaceHeader> _headers = null;
         private IProgress<BasicUpdate> _progress;
 
 
-        private const String meetingSelector = "ul.meetings > li";
+        // private const String meetingSelector = "ul.meetings > li";
+        private const String meetingSelector = "ul.meetings div.hr-meeting-section";
+        private const String meetingTabSelector = "span.generic-tabs-nav-item";
+        private const String ukFilterSelector = "span.hr-racing-racecards-filter.filter-uk";
+
         private const String raceSelector = "ul.hr-meeting-races-container > li";
         private const String goingSelector = "span.hr-meeting-meta-value";
         private const String timeSelector = "span.hr-meeting-race-time";
-        private const String racenameSelector = "div.hr-meeting-race-name-star";
+        // private const String racenameSelector = "div.hr-meeting-race-name-star";
+        private const String racenameSelector = "span.hr-meeting-race-name";
         private const String raceinfoSelector = racenameSelector + "> span";
         private const String raceurlSelector = "li > a";
         private const String courseSelector = "div.dividerRow > h2";
@@ -53,7 +62,30 @@ namespace RacingWebScraper
             _ntf = ntf;
         }
 
-
+        private async Task<List<Meeting>> GetMeetings(string url)
+        {
+            var selector = "script#__NEXT_DATA__";
+            var doc = await HtmlService.GetDocumentAsync("https://www.sportinglife.com/racing/racecards/tomorrow");
+            var json = doc.QuerySelector(selector).TextContent;
+            List<Meeting> meetings = new List<Meeting>();
+            try
+            {
+                meetings = JsonConvert.DeserializeObject<RootObject>(json).Props.pageProps.meetings;
+            }
+            catch (JsonSerializationException e)
+            {
+                throw;
+            } 
+            return meetings;
+        }
+        private string GenRacecardUrl(Racing.Classes.Race race)
+        {
+            string name = Regex.Replace(race.name, @"\s+", "-").ToLower();
+            name = Regex.Replace(name, "[^a-z0-9-]", "");
+            string url = String.Format("{0}/{1}/{2}/racecard/{3}/{4}"
+                , ROOT_CARDS_URI, race.date, race.course_name.ToLower(), race.raceSummaryReference.id, name);
+            return url;
+        }
         public async Task<List<IRaceHeader>> GetHeadersAsync(DateTime dt, IProgress<BasicUpdate> progress)
         {
             if (progress == null) throw new ArgumentNullException("progress can't be null");
@@ -76,51 +108,40 @@ namespace RacingWebScraper
                     List<IRaceHeader> headers = null;
                     headers = new List<IRaceHeader>();
                     String date = String.Format("{0:yyyy-MM-dd}", dt);
-                    String uri = ROOT_CARDS_URI + date;
-                    var document = await HtmlService.GetDocumentAsync(uri).ConfigureAwait(false);
-
-									if(document == null)
-									{
-										log.Error("Failed to get meetings");
-										return null;
-									}
-                    var meetings = document.QuerySelectorAll(meetingSelector);
+                    String uri = ROOT_CARDS_URI + "/" + date;
+                    var meetings = await GetMeetings(uri);
 
                     double currentProgress = 0;
                     double inc = 0;
-                    if (meetings.Length > 0)
+                    if (meetings.Count > 0)
                     {
-                        inc = 100 / meetings.Length;
+                        inc = 100 / meetings.Count();
                     }
 
                     foreach (var meeting in meetings)
                     {
                         int id = 0;
-                        var course = meeting.QuerySelector(courseSelector).TextContent;
-                        var going = meeting.QuerySelector(goingSelector).TextContent;
-                        var races = meeting.QuerySelectorAll(raceSelector);
+                        var course = meeting.meetingSummary.course.name;
+                        var going = meeting.meetingSummary.going;
+                        var races = meeting.races;
 
                         foreach (var race in races)
                         {
-                            String rxRacename = "\\s*\\(.*\\)";
-                            var title = race.QuerySelector(racenameSelector).TextContent;
-                            title = Regex.Replace(title, rxRacename, "");
-                            var time = race.QuerySelector(timeSelector).TextContent;
-                            var info = race.QuerySelector(racenameSelector).TextContent;
-                            var url = SITE_PREFIX + race.QuerySelector(raceurlSelector).GetAttribute("href");
-                            var category = ScrapeCategory(race);
-
                             RaceType type;
-                            if (info.ToUpper().Contains("HURDLE"))
+                            if (race.name.ToUpper().Contains("HURDLE"))
                                 type = RaceType.HURDLES;
-                            else if (info.ToUpper().Contains("CHASE"))
+                            else if (race.name.ToUpper().Contains("CHASE"))
                                 type = RaceType.FENCES;
                             else
                                 type = RaceType.FLAT;
 
-                            IRaceHeader header = new RaceHeader(id, course, going, category, date, time, title, info, url, type);
+                            race.url = GenRacecardUrl(race);
+                            IRaceHeader header = new RaceHeader(
+                                id, course, going, race.raceClass,
+                                race.date, race.time, race.name,
+                                String.Format("{0}, {1} Runners, Class {2}, {3}", race.name, race.rideCount, race.raceClass, race.distance),
+                                race.url, type);
                             headers.Add(header);
-
                         }
                         currentProgress += inc;
                         progress.Report(new BasicUpdate((int)currentProgress, string.Format("getting meeting : {0}", course)));
@@ -147,7 +168,7 @@ namespace RacingWebScraper
             return ScrapeStringFromTextContent(element, selector, rx);
         }
 
-        public async Task<List<Race>> GetRaceDataAsync(List<Dictionary<String, String>> raceData, IProgress<BasicUpdate> progress)
+        public async Task<List<Racing.Race>> GetRaceDataAsync(List<Dictionary<String, String>> raceData, IProgress<BasicUpdate> progress)
         {
             if (raceData == null) throw new ArgumentNullException("raceData is be null");
             if (progress == null) throw new ArgumentNullException("progress is be null");
@@ -160,7 +181,7 @@ namespace RacingWebScraper
                 return null;
             }
 
-            List<Race> races = null;
+            List<Racing.Race> races = null;
             _isRunning = true;
 
             try

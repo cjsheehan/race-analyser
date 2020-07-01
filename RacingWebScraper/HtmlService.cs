@@ -1,5 +1,8 @@
-﻿using System;
+﻿using AngleSharp;
+using System;
+using System.Collections.Generic;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace RacingWebScraper
@@ -28,7 +31,6 @@ log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().Dec
             }
             return  await _htmlParser.ParseAsync(page).ConfigureAwait(false);
         }
-
         public static String GetCanonicalUrl(AngleSharp.Dom.IDocument document)
         {
             if (document == null) throw new ArgumentNullException("document is null");

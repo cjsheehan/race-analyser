@@ -100,18 +100,18 @@ namespace RacingWebScraper
             race.Distance = ScrapeDistance(document);
             race.Title = ScrapeRaceTitle(document);
             race.NumberOfRunners = ScrapeNumberOfRunners(document);
-						race.WinPrize = ScrapeWinPrize(document);
+		    race.WinPrize = ScrapeWinPrize(document);
             race.Entrants = await ScrapeEntrantsAsync(document).ConfigureAwait(false);
             race.Info = ScrapeExtraInfo(document);
             Console.WriteLine("Finished Entrants" + race.Course + race.Time);
             return race;
         }
 
-				private string ScrapeWinPrize(IDocument document)
-				{
-					var selector = "li.hr-racecard-summary-prizes > span:nth-child(1)";
-					return ScrapeTextContent(document, selector).Replace("Winner", "");
-				}
+		private string ScrapeWinPrize(IDocument document)
+		{
+		    var selector = "span:nth-of-type(1) > .hr-racecard-summary-prize-number";
+            return ScrapeTextContent(document, selector);
+		}
 
         private String ScrapeExtraInfo(IDocument document)
         {
@@ -139,15 +139,18 @@ namespace RacingWebScraper
 
         private String ScrapeRaceTitle(IDocument document)
         {
-            const String selector = "li.hr-racecard-summary-race-name";
+            const String selector = ".hr-racecard-race-summary-header";
             return ScrapeTextContent(document, selector);
         }
 
         private String ScrapeDistance(IDocument document)
         {
-            var selector = "li.hr-racecard-summary-race-distance";
+            var selector = ".hr-racecard-race-summary-info-text";
             var textContent = ScrapeTextContent(document, selector);
-            return textContent = Regex.Replace(textContent, ", .*", "");
+            var distance = textContent
+                .Split('|') .ElementAt(1)
+                .Trim();
+            return distance; 
         }
 
         private String ScrapeGoing(IDocument document)
@@ -160,23 +163,10 @@ namespace RacingWebScraper
 
         private int ScrapeNumberOfRunners(IDocument document)
         {
-            const String selector = "li.hr-racecard-summary-race-runners";
-            var textContent = ScrapeTextContent(document, selector);
-            textContent = Regex.Match(textContent, @"\d+").Value;
-
-
-            int numRunners;
-            bool res = int.TryParse(textContent, out numRunners);
-            if (res == false)
-            {
-                return -1;
-            }
-            else
-            {
-                return numRunners;
-            }
+            var selector = ".hr-racecard-race-summary-info-text";
+            var rx = "(\\d+)\\s*Runners";
+            return ScrapeIntFromTextContent(document, selector, rx);
         }
-
 
         private PrizeList GetPrizeMoney(String data)
         {

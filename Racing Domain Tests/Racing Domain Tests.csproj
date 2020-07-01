@@ -40,7 +40,11 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\AngleSharp.0.9.9\lib\net45\AngleSharp.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Net.Http" />
   </ItemGroup>
   <Choose>
     <When Condition="('$(VisualStudioVersion)' == '10.0' or '$(VisualStudioVersion)' == '') and '$(TargetFrameworkVersion)' == 'v3.5'">
@@ -63,6 +67,10 @@
     <ProjectReference Include="..\RacingWebScraper\Racing Domain.csproj">
       <Project>{52f11951-b970-4cf7-a334-9e01c7f239ab}</Project>
       <Name>Racing Domain</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Racing\Racing.csproj">
+      <Project>{F33341BD-7A2E-4F56-A958-6245FD086070}</Project>
+      <Name>Racing</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
