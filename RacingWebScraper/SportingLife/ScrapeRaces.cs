@@ -98,19 +98,21 @@ namespace RacingWebScraper
             race.Time = raceData["time"];
             race.Url = raceData["url"];
             race.Distance = ScrapeDistance(document);
-            race.Title = ScrapeRaceTitle(document);
+            race.Title = ScrapeRaceTitle(document); 
             race.NumberOfRunners = ScrapeNumberOfRunners(document);
 		    race.WinPrize = ScrapeWinPrize(document);
-            race.Entrants = await ScrapeEntrantsAsync(document).ConfigureAwait(false);
-            race.Info = ScrapeExtraInfo(document);
+            race.Entrants = await ScrapeEntrantsAsync(document, race.Url).ConfigureAwait(false);
+            // race.Info = ScrapeExtraInfo(document);
             Console.WriteLine("Finished Entrants" + race.Course + race.Time);
             return race;
         }
 
 		private string ScrapeWinPrize(IDocument document)
 		{
-		    var selector = "span:nth-of-type(1) > .hr-racecard-summary-prize-number";
-            return ScrapeTextContent(document, selector);
+            //var selector = "span:nth-of-type(1) > .hr-racecard-summary-prize-number";
+            var selector = "span:nth-of-type(1) >  [class^='PrizeMoney__PrizeNumber']";
+            var text = ScrapeTextContent(document, selector);
+            return text;
 		}
 
         private String ScrapeExtraInfo(IDocument document)
@@ -139,13 +141,15 @@ namespace RacingWebScraper
 
         private String ScrapeRaceTitle(IDocument document)
         {
-            const String selector = ".hr-racecard-race-summary-header";
-            return ScrapeTextContent(document, selector);
+            const String selector = "[class^='RacingRacecardSummary__StyledTitle']";
+            var textContent = ScrapeTextContent(document, selector);
+            return textContent;
         }
 
         private String ScrapeDistance(IDocument document)
         {
-            var selector = ".hr-racecard-race-summary-info-text";
+// var selector = ".hr-racecard-race-summary-info-text";
+            var selector = "[class^='RacingRacecardSummary__StyledAdditionalInfo']";
             var textContent = ScrapeTextContent(document, selector);
             var distance = textContent
                 .Split('|') .ElementAt(1)
@@ -163,8 +167,9 @@ namespace RacingWebScraper
 
         private int ScrapeNumberOfRunners(IDocument document)
         {
-            var selector = ".hr-racecard-race-summary-info-text";
+            var selector = "[class^='RacingRacecardSummary__StyledAdditionalInfo']";
             var rx = "(\\d+)\\s*Runners";
+            var textContent = ScrapeTextContent(document, selector);
             return ScrapeIntFromTextContent(document, selector, rx);
         }
 

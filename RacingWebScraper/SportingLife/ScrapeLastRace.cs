@@ -183,7 +183,6 @@ namespace RacingWebScraper
 
         private string ScrapeLastCourse(IDocument lastRaceDocument)
         {
-            //const String selector = "section.hr-racing-racecard-top-section > h1";
             const String selector = "div.hr-racing-racecard-heading-text > h1";
             const String rx = "\\d{2}:\\d{2}\\s+(.+)";
             return ScrapeStringFromTextContent(lastRaceDocument, selector, rx);
@@ -265,8 +264,8 @@ namespace RacingWebScraper
 
         private static IHtmlCollection<IElement> ScrapeEntrantsElements(IDocument document)
         {
-            const String entrantSelector = "section.hr-racing-runner-wrapper";
-            return document.QuerySelectorAll(entrantSelector);
+            var selector = "[class^='PreRace__RacecardRunner'] > div";
+            return document.QuerySelectorAll(selector);
         }
 
 

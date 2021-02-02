@@ -14,15 +14,15 @@ namespace RacingWebScraper
     public partial class SLifeRacingScraper
     {
         //const String entrantsSelector = "section.hr-racing-runner-wrapper";
-        async Task<List<Entrant>> ScrapeEntrantsAsync(IDocument document)
+        async Task<List<Entrant>> ScrapeEntrantsAsync(IDocument document, String docUrl)
         {
 
             var entrantsElements = ScrapeEntrantsElements(document);
-            const String dateSelector = "div#hr-course-header-title > .page-main-subtitle";
+            var dateSelector = "[data-test-id='racecard-title'] [class^= 'CourseListingHeader__StyledMainSubTitle']";
             String strRaceDate = ScrapeTextContent(document, dateSelector);
             var raceDate = Convert.ToDateTime(strRaceDate);
 
-            log.Debug("Scraping Entrants :  " + document.Url);
+            log.Debug("Scraping Entrants :  " + docUrl);
             var parallelEntrants = new ConcurrentQueue<Entrant>();
             var tasks = entrantsElements.Select(async element =>
             {
@@ -104,7 +104,7 @@ namespace RacingWebScraper
             var profileDocument = await HtmlService.GetDocumentAsync(profileUrl).ConfigureAwait(false);
 
             // Get date of last race from profile
-            const String dateSelector = "div.profile-results > div > table > tbody > tr:nth-child(1) > td:nth-child(1) > a";
+            var dateSelector = "[class^='FormTable'] > a:nth-of-type(1)";
             String lastRaceDateOnProfile = ScrapeTextContent(profileDocument, dateSelector);
             if (String.IsNullOrEmpty(lastRaceDateOnProfile)) return false;
 
@@ -157,28 +157,32 @@ namespace RacingWebScraper
 
         private String ScrapeTrainerUrl(IElement element)
         {
-            const String selector = ".hr-racing-runner-horse-sub-info > a:nth-of-type(2)";
-            return SITE_PREFIX + ScrapeUrl(element, selector);
+            var selector = "[data-test-id='horse-sub-info'] [href*='trainer']";
+            var url = SITE_PREFIX + ScrapeUrl(element, selector);
+            return url;
         }
 
         private String ScrapeTrainerName(IElement element)
         {
-            const String selector = ".hr-racing-runner-horse-sub-info > a:nth-of-type(2)";
+            var selector = "[data-test-id='horse-sub-info'] [href*='trainer'] span";
             const String rx = "T:\\s*(.+)";
-            return ScrapeStringFromTextContent(element, selector, rx);
+            var textContent = ScrapeStringFromTextContent(element, selector, rx);
+            return textContent;
         }
 
         private String ScrapeJockeyUrl(IElement element)
         {
-            const String selector = ".hr-racing-runner-horse-sub-info > a:nth-of-type(1)";
-            return SITE_PREFIX + ScrapeUrl(element, selector);
+            var selector = "[data-test-id='horse-sub-info'] [href*='jockey']";
+            var url = SITE_PREFIX + ScrapeUrl(element, selector);
+            return url;
         }
 
         private String ScrapeJockeyName(IElement element)
         {
-            const String selector = ".hr-racing-runner-horse-sub-info > a:nth-of-type(1) > span";
+            var selector = "[data-test-id='horse-sub-info'] [href*='jockey'] span";
             const String rx = "J:\\s*(.+)";
-            return ScrapeStringFromTextContent(element, selector, rx);
+            var textContent = ScrapeStringFromTextContent(element, selector, rx);
+            return textContent;
         }
 
 
@@ -197,14 +201,15 @@ namespace RacingWebScraper
 
         private String ScrapeHorseWeight(IElement element)
         {
-            const String selector = "div.hr-racing-runner-horse-sub-info > span:nth-child(2)";
             const String rx = "Weight:\\s*(.+)";
-            return ScrapeStringFromTextContent(element, selector, rx);
+            var selector = "[data-test-id='horse-sub-info'] > span:nth-child(2)";
+            var textContent = ScrapeStringFromTextContent(element, selector, rx);
+            return textContent;
         }
 
         private int ScrapeHorseLastRan(IElement element)
         {
-            const String selector = "sup.hr-racing-runner-horse-last-ran";
+            var selector = "[data-test-id='last-ran']";
             const String rx = "(\\d+)";
             var lastRan = ScrapeIntFromTextContent(element, selector, rx);
 
@@ -218,63 +223,72 @@ namespace RacingWebScraper
 
         private String ScrapeHorseFormWatch(IElement element)
         {
-            const String selector = ".hr-racing-runner-form-watch-info-full";
-            return ScrapeTextContent(element, selector);
+            var selector = "[class^='Runner__StyledCommentary']";
+            var textContent = ScrapeTextContent(element, selector);
+            return textContent;
         }
 
         private String ScrapeHorseForm(IElement element)
         {
-            const String selector = "label.hr-racing-runner-form-stat";
+            var selector = "[data-test-id='show-form'] label";
             const String rx = "Form:\\s+(.+)";
-            return ScrapeStringFromTextContent(element, selector, rx);
+            var textContent = ScrapeStringFromTextContent(element, selector, rx);
+            return textContent;
         }
 
 
 
         private int ScrapeHorseOfficialRating(IElement element)
         {
-            const String selector = ".hr-racing-runner-horse-sub-info > span:nth-child(5)";
+            var selector = "[data-test-id='horse-sub-info']  > span:nth-child(5)";
             const String rx = ".*OR:\\s+(.+)";
-            return ScrapeIntFromTextContent(element, selector, rx);
+            var rating = ScrapeIntFromTextContent(element, selector, rx);
+            return rating;
         }
 
         private int ScrapeHorseAge(IElement element)
         {
-            const String selector = ".hr-racing-runner-horse-sub-info > span:nth-child(1)";
+            var selector = "[data-test-id='horse-sub-info'] > span:nth-of-type(1)";
             const String rx = "(\\d+)";
-            return ScrapeIntFromTextContent(element, selector, rx);
+            var age = ScrapeIntFromTextContent(element, selector, rx);
+            return age;
         }
 
         private String ScrapeHorseName(IElement element)
         {
-            const String selector = ".hr-racing-runner-horse-name > a";
-            return ScrapeTextContent(element, selector);
+            var selector = "[class^='Runner__StyledHorseName'] [id^='horse-number']";
+            var textContent = ScrapeTextContent(element, selector);
+            return textContent;
         }
 
         private String ScrapeHorseUrl(IElement element)
         {
-            const String selector = ".hr-racing-runner-horse-name > a";
-            return SITE_PREFIX + ScrapeUrl(element, selector);
+            var selector = "[class^='Runner__StyledHorseName'] > a";
+            var url = SITE_PREFIX + ScrapeUrl(element, selector);
+            return url;
         }
 
         private int ScrapeStallNumber(IElement element)
         {
-            const String selector = ".hr-racing-runner-stall-no";
+            var selector = "[class^='SaddleAndStall__StyledStallNo']";
             const String rx = "(\\d+)";
-            return ScrapeIntFromTextContent(element, selector, rx);
-        }
+            var stallNo = ScrapeIntFromTextContent(element, selector, rx);
+            return stallNo;
+         }
 
         private int ScrapeSaddleNumber(IElement element)
         {
-            const String selector = ".hr-racing-runner-saddle-cloth-no";
+            var selector = "[class^='SaddleAndStall__StyledSaddleClothNo']";
             const String rx = "(\\d+)";
-            return ScrapeIntFromTextContent(element, selector, rx);
+            var saddleNo = ScrapeIntFromTextContent(element, selector, rx);
+            return saddleNo;
         }
 
         private String ScrapeOdds(IElement element)
         {
-            const String selector = ".hr-racing-runner-betting-link.sui-odds";
-            return ScrapeTextContent(element, selector);
+            var selector = "[data-metrics-betlink-id]";
+            var textContent = ScrapeTextContent(element, selector);
+            return textContent;
         }
 
     }
