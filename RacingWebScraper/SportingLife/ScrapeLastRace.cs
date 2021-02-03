@@ -24,7 +24,8 @@ namespace RacingWebScraper
             //var lastClass = ScrapeLastClass(profileDocument);
 
             // Get page for last race
-            const String lastRaceUrlSelector = "td:nth-child(1) > a.profile-racing-form-racecard-link";
+            var lastRaceUrlSelector = "[data-test-id='profile-table'] tr:nth-of-type(1) [href*='results']"; 
+            //"td:nth-child(1) > a.profile-racing-form-racecard-link";
 
             String lastRaceCardUrl = "";
             try
@@ -121,23 +122,18 @@ namespace RacingWebScraper
                     log.Error(errMsg + ": analysis");
                 }
 
-
-
                 try
                 {
-                    if (position == 1)
-                    {
-                        lastRace.BeatenLengths = 0;
-                    }
-                    else if (position > 1)
-                    {
-                        lastRace.BeatenLengths = ScrapeBeatenLengths(lastRaceDocument, position);
-                    }
+                    string strId = Regex.Match(horseUrl, @"\d+").Value;
+                    Int32 horseId = Int32.Parse(strId);
+                    lastRace.BeatenLengths = ScrapeBeatenLengths(lastRaceDocument, position, horseId);
                 }
                 catch (System.Exception e)
                 {
                     log.Error("Failed to scrape beaten lengths: " + e.Message);
                 }
+
+
             }
             else
             {
@@ -167,9 +163,32 @@ namespace RacingWebScraper
             return lastRace;
         }
 
+        private List<int> GetAllFinisherIds(IDocument lastRaceDocument)
+        {
+            var selector = "[class*='RaceCardsWrapper']:nth-of-type(1) [class^='ResultRunner'] [href^='/racing/profiles/horse/']";
+            IHtmlCollection<IElement> elems = lastRaceDocument.QuerySelectorAll(selector);
+            List<int> finisherIds = new List<int>();
+            foreach (IElement elem in elems)
+            {
+                string url = elem.GetAttribute("href");
+                string strId = Regex.Match(url, @"\d+").Value;
+                finisherIds.Add(Int32.Parse(strId));
+            }
+            return finisherIds;
+        }
+
+        private int GetRunnerId(IElement runnerElem)
+        {
+            var selector = "[href^='/racing/profiles/horse/']";
+            IElement urlElem = runnerElem.QuerySelector(selector);
+            string url = urlElem.GetAttribute("href");
+            string strId = Regex.Match(url, @"\d+").Value;
+            return Int32.Parse(strId);
+        }
+
         private bool IsWeighedIn(IDocument lastRaceDocument)
         {
-            const String selector = "div.hr-racecard-weighed-in-wrapper";
+            var selector = "[class^='RacingRacecardSummary__StyledWeighedIn']";
             var element = ScrapeTextContent(lastRaceDocument, selector);
             if (!String.IsNullOrEmpty(element))
             {
@@ -183,16 +202,18 @@ namespace RacingWebScraper
 
         private string ScrapeLastCourse(IDocument lastRaceDocument)
         {
-            const String selector = "div.hr-racing-racecard-heading-text > h1";
+            var selector = "[class^='CourseListingHeader__StyledMainTitle']";
             const String rx = "\\d{2}:\\d{2}\\s+(.+)";
-            return ScrapeStringFromTextContent(lastRaceDocument, selector, rx);
+            var course = ScrapeStringFromTextContent(lastRaceDocument, selector, rx);
+            return course;
         }
 
         private string ScrapeLastAnalysis(IDocument lastRaceDocument, int position)
         {
-            var entrantElements = ScrapeEntrantsElements(lastRaceDocument);
-            const String analysisSelector = "div.hr-racing-runner-ride-desc-info";
-            return ScrapeTextContent(entrantElements[position - 1], analysisSelector);
+            var entrantElements = ScrapeResultRunnerElements(lastRaceDocument);
+            var selector = "[data-test-id='ride-description']";
+            var textContent = ScrapeTextContent(entrantElements[position - 1], selector);
+            return textContent;
         }
 
         private String ScrapeLastWinningTime(IDocument lastRaceDocument)
@@ -205,12 +226,12 @@ namespace RacingWebScraper
         {
             String classInfo = "";
             // (Grade 3) (National Course) (Class 1)
-            const String selector = "li.hr-racecard-summary-race-name.hr-racecard-summary-always-open";
+            var selector = "div > [class^='RacingRacecardSummary__StyledAdditionalInfo-']";
             String summary = ScrapeTextContent(lastRaceDocument, selector);
 
             // check class
-            String rx = "\\(Class (\\d)\\)";
-            int raceClass = ScrapeIntFromTextContent(lastRaceDocument.DocumentElement, selector, rx);
+            String rx = "Class (\\d)";
+            int raceClass = ScrapeIntFromTextContent(lastRaceDocument, selector, rx);
             classInfo = "C" + raceClass;
 
             if (raceClass < 1)
@@ -250,83 +271,110 @@ namespace RacingWebScraper
 
         private String ScrapeLastOdds(IDocument lastRaceDocument, int position)
         {
-            var entrantElements = ScrapeEntrantsElements(lastRaceDocument);
-            const String oddsSelector = "span.hr-racing-runner-betting-info";
-            return ScrapeTextContent(entrantElements[position - 1], oddsSelector);
+            var entrantElements = ScrapeResultRunnerElements(lastRaceDocument);
+            var selector = "[class^='BetLink'] span";
+            var odds = ScrapeTextContent(entrantElements[position - 1], selector);
+            return odds;
         }
 
         private string ScrapeLastWeight(IDocument lastRaceDocument, int position)
         {
-            var entrantElements = ScrapeEntrantsElements(lastRaceDocument);
-            const String selector = "div.hr-racing-runner-horse-sub-info > span:nth-child(2)";
-            return ScrapeTextContent(entrantElements[position - 1], selector);
+            var entrantElements = ScrapeResultRunnerElements(lastRaceDocument);
+            var selector = "[data-test-id='horse-sub-info'] span:nth-child(2)";
+            var weight = ScrapeTextContent(entrantElements[position - 1], selector);
+            return weight;
         }
 
-        private static IHtmlCollection<IElement> ScrapeEntrantsElements(IDocument document)
+
+
+        private static IHtmlCollection<IElement> ScrapeResultRunnerElements(IDocument document)
         {
-            var selector = "[class^='PreRace__RacecardRunner'] > div";
+            var selector = "[class^='ResultRunner__StyledResultRunnerWrapper']";
             return document.QuerySelectorAll(selector);
         }
 
-
-        private double ScrapeBeatenLengths(IDocument lastRaceDocument, int position)
+        private double ScrapeBeatenLengths(IDocument lastRaceDocument, int position, int horseId)
         {
             // winner has no beaten lengths
             if (position == 1) return 0;
 
-            var entrantElements = ScrapeEntrantsElements(lastRaceDocument);
-            if (entrantElements.Length == 0)
+            List<int> finisherIds = GetAllFinisherIds(lastRaceDocument);
+            if (!finisherIds.Contains(horseId))
+            {
+                return -1;
+            }
+
+            IHtmlCollection<IElement> runnerElements = ScrapeResultRunnerElements(lastRaceDocument);
+            if (runnerElements.Length == 0)
             {
                 log.Error(String.Format("0 entrants found in : {0}", HtmlService.GetCanonicalUrl(lastRaceDocument)));
                 return -1;
             }
-            // Get the individual finishing distances between runners
+
+            // Sum the finisher distances up to and including the target horseId
             double sumDistance = 0.0;
-            IEnumerable<double[]> entrantDistances = entrantElements.Skip(1).Take(position - 1).Select(e =>
+            // start at i = 1 to skip the winner who has no beaten dist
+            for (int i = 1; i < runnerElements.Length; i++)
             {
-
-                if (IsNonRunner(e))
+                IElement elem = runnerElements.ElementAt(i);
+                var distSelector = "[class^='StyledRaceCardsWrapper']:nth-of-type(1) [class^='ResultRunner__StyledFinishDistance']";
+                string strDist = ScrapeTextContent(elem, distSelector);
+                if (String.IsNullOrEmpty(strDist))
                 {
-                    return new double[] { -1, -1 };
+                    log.Error(String.Format("No distance found in element : i:{0}, selector:{1} url{2} : ", i, distSelector, lastRaceDocument.Url));
+                    return -1;
                 }
-
-                const String select = "div.hr-racing-runner-space-from-winner";
-                var textContent = ScrapeTextContent(e, select);
-                if (String.IsNullOrEmpty(textContent))
+                var currentDistance = Distance.ConvertLengthsToDouble(strDist);
+                sumDistance += currentDistance;
+                log.Debug(String.Format("sum distance: idx:{0} strCur:{1} cur:{2} sum:{3}", i, strDist, currentDistance, sumDistance));
+                int curHorseId = GetRunnerId(elem);
+                if (curHorseId == horseId)
                 {
-                    log.Error(String.Format("No distance found in element : {0}, with selector : {1}m url : ", e, select, lastRaceDocument.Url));
-                    return new double[] { -1, -1 };
+                    break;
                 }
-
-                double currentDistance = 0.0;
-                try
-                {
-                    currentDistance = Distance.ConvertLengthsToDouble(textContent);
-                    sumDistance += currentDistance;
-                }
-                catch (Exception ex)
-                {
-                    log.Error(String.Format("Failed to conver lengths to double : {0} , {1}", HtmlService.GetCanonicalUrl(lastRaceDocument), ex.Message));
-                }
-                return new double[2] { currentDistance, sumDistance };
-            });
-            var entrantDistancesList = entrantDistances.ToList();
-
-            if (entrantDistancesList.Count == 0)
-            {
-                log.Error(String.Format("0 distances found in : {0}", HtmlService.GetCanonicalUrl(lastRaceDocument)));
-                return -1;
             }
-
-            // min position value = 2
-            var beatenLengths = entrantDistancesList[position - 2][1];
-            log.Info("Position " + position + " " + entrantDistancesList.Count);
-
-
-            return beatenLengths;
+            return sumDistance;
         }
 
-        private bool IsNonRunner(IElement element)
+        private List<String> GetNonRunnerNames(IDocument lastRaceDocument)
+        {
+            var selector = "[id='nonrunners'] [data-test-id='runner-horse-name']";
+            IHtmlCollection<IElement> elems = lastRaceDocument.QuerySelectorAll(selector);
+            List<String> nonRunnerNames = new List<String>();
+            foreach (var elem in elems)
+            {
+                var textContent = elem.TextContent;
+            }
+            return nonRunnerNames;
+        }
+
+        private List<int> GetNonRunnerClothNos(IDocument lastRaceDocument)
+        {
+            var selector = "[id='nonrunners'] [data-test-id='runner-cloth-number']";
+            IHtmlCollection<IElement> elems = lastRaceDocument.QuerySelectorAll(selector);
+            List<int> nonRunnerClothNos = new List<int>();
+            foreach (var elem in elems)
+            {
+                var textContent = elem.TextContent;
+                if (textContent != null)
+                {
+                    Regex rx = new Regex("(\\d+)");
+                    Match match = rx.Match(textContent);
+                    if (match.Success)
+                    {
+                        int clothNo;
+                        bool res = int.TryParse(match.Groups[1].Value, out clothNo);
+                        if (res == true)
+                        {
+                            nonRunnerClothNos.Add(clothNo);
+                        }
+                    }
+                }
+            }
+            return nonRunnerClothNos;
+        }
+
+        private bool IsNonRunner(IElement element, List<int> nonRunnerClothNos)
         {
             const String select = "span.hr-racing-nonrunner-position-no";
             var textContent = ScrapeTextContent(element, select);
@@ -344,30 +392,37 @@ namespace RacingWebScraper
 
         String ScrapeLastPositionInField(IElement element)
         {
-            const String selector = "div.profile-results > div > table > tbody > tr:nth-child(1) > td:nth-child(2)";
-            return ScrapeTextContent(element, selector);
+            var selector = "[data-test-id='profile-table'] tr:nth-of-type(1) > td:nth-of-type(2)";
+            var textContent = ScrapeTextContent(element, selector);
+            return textContent;
         }
 
         int ScrapeLastPosition(IElement element)
         {
-            const String selector = "div.profile-results > div > table > tbody > tr:nth-child(1) > td:nth-child(2)";
+            var selector = "[data-test-id='profile-table'] tr:nth-of-type(1) > td:nth-of-type(2)";
             const String rx = "(.+)/.+";
-            return ScrapeIntFromTextContent(element, selector, rx);
+            var pos = ScrapeIntFromTextContent(element, selector, rx);
+            return pos;
         }
 
 
         String ScrapeLastDistance(IDocument document)
         {
-            // li.hr-racecard-summary-race-distance.hr-racecard-summary-always-open
-            const String selector = "li.hr-racecard-summary-race-distance";
-            const String rx = "(.+),.+$";
-            return ScrapeStringFromTextContent(document, selector, rx);
+            var selector = "[class^='RacingRacecardSummary__StyledAdditionalInfo']";
+            var textContent = ScrapeTextContent(document, selector);
+            var distance = textContent
+                .Split('|').ElementAt(1)
+                .Trim();
+            return distance;
         }
         private string ScrapeLastGoing(IDocument document)
         {
-            const String selector = "li.hr-racecard-summary-race-distance";
-            const String rx = ".+,\\s+(.+)$";
-            return ScrapeStringFromTextContent(document, selector, rx);
+            var selector = "[class^='RacingRacecardSummary__StyledAdditionalInfo']";
+            var textContent = ScrapeTextContent(document, selector);
+            var going = textContent
+                .Split('|').ElementAt(2)
+                .Trim();
+            return going;
         }
 
 

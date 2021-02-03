@@ -17,7 +17,7 @@ namespace RacingWebScraper
         async Task<List<Entrant>> ScrapeEntrantsAsync(IDocument document, String docUrl)
         {
 
-            var entrantsElements = ScrapeEntrantsElements(document);
+            var entrantsElements = ScrapeRacecardRunnerElements(document);
             var dateSelector = "[data-test-id='racecard-title'] [class^= 'CourseListingHeader__StyledMainSubTitle']";
             String strRaceDate = ScrapeTextContent(document, dateSelector);
             var raceDate = Convert.ToDateTime(strRaceDate);
@@ -123,6 +123,11 @@ namespace RacingWebScraper
             {
                 return false;
             }
+        }
+        private static IHtmlCollection<IElement> ScrapeRacecardRunnerElements(IDocument document)
+        {
+            var selector = "[class^='PreRace__RacecardRunner'] > div";
+            return document.QuerySelectorAll(selector);
         }
 
         private String ScrapeLastPositionFromForm(String form)
