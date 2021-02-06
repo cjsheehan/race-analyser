@@ -106,7 +106,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <None Include="Resources\xmlHorseBuilder.pl" />
+    <AdditionalFiles Include="Resources\xmlHorseBuilder.pl" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RacingWebScraper\Racing Domain.csproj">

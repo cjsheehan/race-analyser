@@ -196,7 +196,7 @@ if ($debug)
 {
   print $debugFH Dumper( $data );	
 }
-  
+
 ########################################################################################################
 # Populate the main race data structure                                                                #
 ########################################################################################################
@@ -340,7 +340,7 @@ sub convertGoing {
     #Good
     $goingTable{'4'}   = [ qr{^g.*d$}i, qr{^g.*d-g.*$}i, qr{^s.*d$}i, qr{^g.*d,.*$}i];
     #Good/Soft
-    $goingTable{'5'} = [ qr{^g.*d/s.*t.*}i, qr{^s.*d/s.*w.*}i, qr{^g.*d to s.*t.*}i ];
+    $goingTable{'5'} = [ qr{^g.*d/s.*t.*}i, qr{^s.*d\s*/\s*s.*w.*}i, qr{^g.*d to s.*t.*}i ];
     #Soft
     $goingTable{'6'}   = [ qr{^s.*t,?$}i, qr{^Soft,.*$}i, qr{^Soft-.*}i, qr{^Soft .+}i ];
     #Heavy
@@ -675,7 +675,11 @@ sub getFormat {
   elsif ($type eq "float")
   {
     $format = $floatFormatHLCB; 
-    if($val == -1)
+    if($val eq "N/A")
+    {
+        $format = $floatFormatSilverCB
+    }
+    elsif($val == -1)
     {
       $format = $floatFormatRedCB
     }
@@ -793,6 +797,10 @@ sub writeHorseInfo {
             elsif($POSITION eq $key)
             {
                 my $format = getFormat($prevFullPos, "str", "yes");
+                if($prevFullPos =~ /LRx/)
+                {
+                    $format = $strFormatCB;
+                }
                 $$dest_sheet_ref->write(($row + 1), col2int($cols{prev_pos}), $prevFullPos, $format) if $prevFullPos;
             } 
             elsif($PRIZE eq $key)
@@ -831,6 +839,12 @@ sub writeHorseInfo {
                     ## race incident (fell (F), unseated rider (UR) etc) 
                     $prevBeatDist =  "N/A";    
                     $format = getFormat(1, "str", "yes");
+                }
+                elsif($prevFullPos =~ /LRx/)
+                {
+                    ## Last Race data doesn't match days since last ran
+                    $prevBeatDist = "LRx";
+                    $format = $strFormatCB;
                 }
                 elsif($prevPos ne "No Form" && $prevPos ne "-" && $prevPos > 1 && $prevBeatDist == -1)
                 {
