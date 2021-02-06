@@ -62,7 +62,7 @@ namespace RacingWebScraper
                         if (!String.IsNullOrEmpty(entrant.Form))
                         {
                             entrant.LastRace = new LastRace();
-                            entrant.LastRace.Position = ScrapeLastPositionFromForm(entrant.Form);
+                            entrant.LastRace.Position = "LRx " + ScrapeLastPositionFromForm(entrant.Form);
                         }
                         else
                         {
@@ -178,7 +178,16 @@ namespace RacingWebScraper
         private String ScrapeJockeyUrl(IElement element)
         {
             var selector = "[data-test-id='horse-sub-info'] [href*='jockey']";
-            var url = SITE_PREFIX + ScrapeUrl(element, selector);
+            String url = "";
+            try
+            {
+                url = SITE_PREFIX + ScrapeUrl(element, selector);
+            }
+            catch (NullReferenceException ex)
+            {
+                url = "Unknown";
+            }
+            
             return url;
         }
 

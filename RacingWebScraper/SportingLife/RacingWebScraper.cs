@@ -65,7 +65,7 @@ namespace RacingWebScraper
         private async Task<List<Meeting>> GetMeetings(string url)
         {
             var selector = "script#__NEXT_DATA__";
-            var doc = await HtmlService.GetDocumentAsync("https://www.sportinglife.com/racing/racecards/tomorrow");
+            var doc = await HtmlService.GetDocumentAsync(url);
             var json = doc.QuerySelector(selector).TextContent;
             List<Meeting> meetings = new List<Meeting>();
             try

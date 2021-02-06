@@ -24,8 +24,11 @@ namespace RacingWebScraper
             //var lastClass = ScrapeLastClass(profileDocument);
 
             // Get page for last race
-            var lastRaceUrlSelector = "[data-test-id='profile-table'] tr:nth-of-type(1) [href*='results']"; 
+            var lastRaceUrlSelector = "[data-test-id='profile-table'] tr:nth-of-type(1) [href*='results']";
             //"td:nth-child(1) > a.profile-racing-form-racecard-link";
+
+            string strId = Regex.Match(horseUrl, @"\d+").Value;
+            Int32 horseId = Int32.Parse(strId);
 
             String lastRaceCardUrl = "";
             try
@@ -55,34 +58,45 @@ namespace RacingWebScraper
             LastRace lastRace = new LastRace();
             String errMsg = "Failed to scrape last race data for " + horseName;
             if (!IsWeighedIn(lastRaceDocument)) return lastRace;
-
-
+            
             try
             {
-                lastRace.Class = ScrapeLastClass(lastRaceDocument);
+                RaceAdditionalInfo raceAdditionalInfo = ScrapeRaceAdditionalInfo(lastRaceDocument);
+                lastRace.Class = raceAdditionalInfo.RaceClass;
+                lastRace.Distance = raceAdditionalInfo.Distance;
+                lastRace.Going = raceAdditionalInfo.Going; 
             }
             catch (System.Exception ex)
             {
-                log.Error(errMsg + ": class");
+                log.Error(errMsg + ": raceAdditionalInfo");
             }
 
-            try
-            {
-                lastRace.Distance = ScrapeLastDistance(lastRaceDocument);
-            }
-            catch (System.Exception ex)
-            {
-                log.Error(errMsg + ": distance");
-            }
+            //try
+            //{
+            //    lastRace.Class = ScrapeLastClass(lastRaceDocument);
+            //}
+            //catch (System.Exception ex)
+            //{
+            //    log.Error(errMsg + ": class");
+            //}
 
-            try
-            {
-                lastRace.Going = ScrapeLastGoing(lastRaceDocument);
-            }
-            catch (System.Exception ex)
-            {
-                log.Error(errMsg + ": going");
-            }
+            //try
+            //{
+            //    lastRace.Distance = ScrapeLastDistance(lastRaceDocument);
+            //}
+            //catch (System.Exception ex)
+            //{
+            //    log.Error(errMsg + ": distance");
+            //}
+
+            //try
+            //{
+            //    lastRace.Going = ScrapeLastGoing(lastRaceDocument);
+            //}
+            //catch (System.Exception ex)
+            //{
+            //    log.Error(errMsg + ": going");
+            //}
 
             try
             {
@@ -124,8 +138,6 @@ namespace RacingWebScraper
 
                 try
                 {
-                    string strId = Regex.Match(horseUrl, @"\d+").Value;
-                    Int32 horseId = Int32.Parse(strId);
                     lastRace.BeatenLengths = ScrapeBeatenLengths(lastRaceDocument, position, horseId);
                 }
                 catch (System.Exception e)
@@ -146,12 +158,12 @@ namespace RacingWebScraper
             }
             catch (System.Exception ex)
             {
-                log.Error(errMsg + ": odds");
+                log.Error(errMsg + ": winning time");
             }
 
             try
             {
-                lastRace.LastRacePrizes = ScrapePrizes(lastRaceDocument);
+                lastRace.LastRacePrizes = ScrapeResultWinPrize(lastRaceDocument);
             }
             catch (System.Exception ex)
             {
@@ -161,6 +173,66 @@ namespace RacingWebScraper
             //lastRace.Class = lastClass;
             lastRace.Position = positionInField;
             return lastRace;
+        }
+
+        private class RaceAdditionalInfo
+        {
+            public String Distance { get; set; } = "";
+            public String Going { get; set; } = "";
+            public String RaceClass { get; set; } = "";
+        }
+
+        private RaceAdditionalInfo ScrapeRaceAdditionalInfo (IDocument lastRaceDocument)
+        {
+            RaceAdditionalInfo raceInfo = new RaceAdditionalInfo();
+            // 1m 2f 150y | Standard   | 13 Runners | Polytrack
+            //  Class 1   | 2m 4f 10y  |  7 Runners | Turf
+            //   Class 5  |   2m 128y  |  9 Runners | Turf
+            //     2m 2f  | 23 Runners |  Turf
+            //   Class 5  |  1m 2f 42y |   Standard / Slow  | 11 Runners | Allweather
+
+            var infoSelector = "div > [class^='RacingRacecardSummary__StyledAdditionalInfo-']";
+            String summary = ScrapeTextContent(lastRaceDocument, infoSelector);
+            List<String> summaryElems = summary.Split('|').Select(info => info.Trim()).ToList();
+            int classIdx = 0;
+            int distIdx = 1;
+            int goingIdx = 2;
+            if(!summaryElems.ElementAt(0).Contains("Class"))
+            {
+                classIdx = -1;
+                distIdx = 0;
+                goingIdx = 1;
+            }
+            // If the element at distance + 1 contaings "Runners", then no going available
+            if(summaryElems.ElementAt(distIdx + 1).Contains("Runners"))
+            {
+                goingIdx = -1;
+            }
+
+            if (distIdx >= 0)
+            {
+                raceInfo.Distance = summaryElems.ElementAt(distIdx);
+            }
+
+            if (goingIdx >= 0)
+            {
+                raceInfo.Going = summaryElems.ElementAt(goingIdx);
+            }
+            if (classIdx >= 0)
+            {
+                String raceClass = "C" + Regex.Match(summaryElems.ElementAt(classIdx), @"\d+").Value;
+                String rx = "Grade (\\d)";
+                String raceTitleSelector = "[data-test-id='racecard-race-name']";
+                int grade = ScrapeIntFromTextContent(lastRaceDocument, raceTitleSelector, rx);
+                if(!grade.Equals(-1))
+                {
+                    // Add Grade to Class
+                    raceClass = raceClass + " G" + grade;
+                }
+                raceInfo.RaceClass = raceClass;
+
+            }
+            return raceInfo;
         }
 
         private List<int> GetAllFinisherIds(IDocument lastRaceDocument)
@@ -218,20 +290,33 @@ namespace RacingWebScraper
 
         private String ScrapeLastWinningTime(IDocument lastRaceDocument)
         {
-            const String selector = "span.hr-racecard-weighed-in-wt > span";
-            return ScrapeTextContent(lastRaceDocument, selector);
+            var selector = "[class^='RacingRacecardSummary']:nth-of-type(2)";
+            var textContent = ScrapeTextContent(lastRaceDocument, selector);
+            var winTime = textContent
+                .Split(':').ElementAt(3)
+                .Trim();
+            return winTime;
         }
 
         private String ScrapeLastClass(IDocument lastRaceDocument)
         {
+            //1) Ireland, France: 1m 2f 150y  |   Standard  |   13 Runners  |   Polytrack
+            //2) UK             :    Class 1  |   2m 4f 10y |    7 Runners  |   Turf
+            //3)                       2m 2f  | 23 Runners  |   Turf
+            //4)                     Class 5  |   1m 2f 42y |   Standard / Slow  |   11 Runners  |   Allweather
+
+
+            // If Class in 1st column, type 2), else type 1)
+            // Virgin Bet Cotswold Chase (Grade 2) (GBB Race)
+            // Grade is now in race title for Class 1 races
+
             String classInfo = "";
-            // (Grade 3) (National Course) (Class 1)
-            var selector = "div > [class^='RacingRacecardSummary__StyledAdditionalInfo-']";
-            String summary = ScrapeTextContent(lastRaceDocument, selector);
+            var classSelector = "div > [class^='RacingRacecardSummary__StyledAdditionalInfo-']";
+            String summary = ScrapeTextContent(lastRaceDocument, classSelector);
 
             // check class
             String rx = "Class (\\d)";
-            int raceClass = ScrapeIntFromTextContent(lastRaceDocument, selector, rx);
+            int raceClass = ScrapeIntFromTextContent(lastRaceDocument, classSelector, rx);
             classInfo = "C" + raceClass;
 
             if (raceClass < 1)
@@ -245,7 +330,7 @@ namespace RacingWebScraper
             else if (raceClass.Equals(1))
             {
                 rx = "\\(Grade (\\d)\\)";
-                int grade = ScrapeIntFromTextContent(lastRaceDocument.DocumentElement, selector, rx);
+                int grade = ScrapeIntFromTextContent(lastRaceDocument.DocumentElement, classSelector, rx);
 
                 if (grade.Equals(-1))
                 {
@@ -263,10 +348,11 @@ namespace RacingWebScraper
             return classInfo;
         }
 
-        private String ScrapePrizes(IDocument lastRaceDocument)
+        private String ScrapeResultWinPrize(IDocument lastRaceDocument)
         {
-            const String selector = "li.hr-racecard-summary-prizes > span:nth-child(1)";
-            return ScrapeTextContent(lastRaceDocument, selector).Replace("Winner", "");
+            var selector = "[class^='PrizeMoney__Prize-']:nth-of-type(1) > span:nth-of-type(2)";
+            var prize = ScrapeTextContent(lastRaceDocument, selector);
+            return prize;
         }
 
         private String ScrapeLastOdds(IDocument lastRaceDocument, int position)

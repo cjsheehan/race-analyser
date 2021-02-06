@@ -106,7 +106,7 @@ namespace RacingWebScraper
             {
                 converted = 0.01;
             }
-            else if (distance.Equals("shd") || distance.Equals("s.h"))
+            else if (distance.Equals("shd") || distance.Equals("sh") || distance.Equals("s.h"))
             {
                 converted = 0.1;
             }
@@ -154,7 +154,7 @@ namespace RacingWebScraper
                 }
                 else
                 {
-                    throw new ArgumentException("distance :" + distance + " is invalid format");
+                    throw new ArgumentException("distance: " + distance + " is invalid format");
                 }
             }
 

@@ -100,14 +100,14 @@ namespace RacingWebScraper
             race.Distance = ScrapeDistance(document);
             race.Title = ScrapeRaceTitle(document); 
             race.NumberOfRunners = ScrapeNumberOfRunners(document);
-		    race.WinPrize = ScrapeWinPrize(document);
+		    race.WinPrize = ScrapeRacecardWinPrize(document);
             race.Entrants = await ScrapeEntrantsAsync(document, race.Url).ConfigureAwait(false);
             // race.Info = ScrapeExtraInfo(document);
             Console.WriteLine("Finished Entrants" + race.Course + race.Time);
             return race;
         }
 
-		private string ScrapeWinPrize(IDocument document)
+		private string ScrapeRacecardWinPrize(IDocument document)
 		{
             //var selector = "span:nth-of-type(1) > .hr-racecard-summary-prize-number";
             var selector = "span:nth-of-type(1) >  [class^='PrizeMoney__PrizeNumber']";

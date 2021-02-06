@@ -38,7 +38,13 @@ namespace RacingWebScraper
 
         String ScrapeUrl(AngleSharp.Dom.IElement element, String selector)
         {
-            return element.QuerySelector(selector).GetAttribute("href");
+            IElement selElem = element.QuerySelector(selector);
+            if (selElem != null)
+            {
+                return selElem.GetAttribute("href");
+            }
+            return "UNKNOWN";
+                
         }
 
         String ScrapeUrl(AngleSharp.Dom.IDocument document, String selector)
