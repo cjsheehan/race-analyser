@@ -903,7 +903,7 @@ sub writeHorseInfo {
             elsif($CLASS eq $key)
             {
                 my $prevClass = $horse->{$LAST_RACE}{$CLASS};
-                $$dest_sheet_ref->write(($row + 1), col2int($cols{prev_class}), $prevClass, $entryFormat1) if ref $prevClass ne "HASH"; 
+                $$dest_sheet_ref->write(($row + 1), col2int($cols{prev_class}), $prevClass, $entryFormatLeft) if ref $prevClass ne "HASH"; 
             }
             elsif($DISTANCE eq $key)
             {
