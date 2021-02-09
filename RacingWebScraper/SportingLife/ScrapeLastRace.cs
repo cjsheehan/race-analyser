@@ -221,16 +221,24 @@ namespace RacingWebScraper
             if (classIdx >= 0)
             {
                 String raceClass = "C" + Regex.Match(summaryElems.ElementAt(classIdx), @"\d+").Value;
-                String rx = "Grade (\\d)";
                 String raceTitleSelector = "[data-test-id='racecard-race-name']";
-                int grade = ScrapeIntFromTextContent(lastRaceDocument, raceTitleSelector, rx);
+                String rxGrade = "Grade (\\d)";
+                int grade = ScrapeIntFromTextContent(lastRaceDocument, raceTitleSelector, rxGrade);
+
                 if(!grade.Equals(-1))
                 {
                     // Add Grade to Class
                     raceClass = raceClass + " G" + grade;
                 }
-                raceInfo.RaceClass = raceClass;
 
+                String raceTitle = ScrapeTextContent(lastRaceDocument, raceTitleSelector);
+                if (raceTitle.Contains("Listed"))
+                {
+                    // Add Listed to Class
+                    raceClass += " Listed";
+                }
+
+                raceInfo.RaceClass = raceClass;
             }
             return raceInfo;
         }
