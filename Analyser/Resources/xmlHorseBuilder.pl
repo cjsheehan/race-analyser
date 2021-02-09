@@ -340,7 +340,7 @@ sub convertGoing {
     #Good
     $goingTable{'4'}   = [ qr{^g.*d$}i, qr{^g.*d-g.*$}i, qr{^s.*d$}i, qr{^g.*d,.*$}i];
     #Good/Soft
-    $goingTable{'5'} = [ qr{^g.*d/s.*t.*}i, qr{^s.*d\s*/\s*s.*w.*}i, qr{^g.*d to s.*t.*}i ];
+    $goingTable{'5'} = [ qr{^g.*d/s.*t.*}i, qr{^Standard / Slow}i, qr{^g.*d to s.*t.*}i, qr{^Standard to slow}i, qr{^yielding\s*$}i, qr{^yielding\s*\(}i];
     #Soft
     $goingTable{'6'}   = [ qr{^s.*t,?$}i, qr{^Soft,.*$}i, qr{^Soft-.*}i, qr{^Soft .+}i ];
     #Heavy
@@ -353,13 +353,13 @@ sub convertGoing {
     #Good/Firm
     $goingTable{'2'} = [ qr{^g.*d{1}/f.*m,?}i, qr{^g.*d *to *f.*m *.*$}i];
     #Good
-    $goingTable{'3'}   = [ qr{^g.*d$}i, qr{^g.*d-g.*$}i, qr{^s.*d$}i, qr{^good,}i, qr{^g.*d,.*$}i, qr{^g.*d \(.*}i ];
+    $goingTable{'3'}   = [ qr{^g.*d$}i, qr{^g.*d-g.*$}i, qr{^s.*d$}i, qr{^good,}i, qr{^g.*d,.*$}i, qr{^g.*d \(.*}i];
     #Good/Soft
-    $goingTable{'4'} = [ qr{^g.*d/s.*t.*}i, qr{^s.*d/s.*w.*}i, qr{^g\S+d to s.*t.*}i ];
+    $goingTable{'4'} = [ qr{^g.*d/s.*t.*}i, qr{^s.*d/s.*w.*}i, qr{^g\S+d to s.*t.*}i, qr{^yielding\s*$}i, qr{^yielding\s*\(}i, qr{^Standard / Slow}i, qr{^Standard\s*to\s*slow}i];
     #Soft
-    $goingTable{'5'}   = [ qr{^s.*t$}i, qr{^s.*t,.*$}i, qr{^s.*t-.*$}i, qr{^s.*t \(.*$}i, qr{^S.*t}i];
+    $goingTable{'5'}   = [ qr{^s.*t$}i, qr{^s.*t,.*$}i, qr{^s.*t-.*$}i, qr{^s.*t \(.*$}i, qr{^yielding\s*$}i, qr{^yielding to soft}i];
     #Soft/Heavy
-    $goingTable{'6'}   = [ qr{^s.*t/h.*y,?.*$}i, qr{^s.*t to h.*y,?.*$}i ];
+    $goingTable{'6'}   = [ qr{^s.*t/h.*y$}i, qr{^soft to heavy}i ];
     #Heavy
     $goingTable{'7'}  = [ qr{^h.*y.*}i ];
   }
