@@ -148,13 +148,15 @@ namespace RacingWebScraper
 
         private String ScrapeDistance(IDocument document)
         {
-// var selector = ".hr-racecard-race-summary-info-text";
             var selector = "[class^='RacingRacecardSummary__StyledAdditionalInfo']";
             var textContent = ScrapeTextContent(document, selector);
-            var distance = textContent
-                .Split('|') .ElementAt(1)
-                .Trim();
-            return distance; 
+            var textElems = textContent.Split('|').Select(info => info.Trim()).ToList();
+            int distIdx = 1;
+            if (!textElems.ElementAt(0).Contains("Class"))
+            {
+                distIdx = 0;
+            }
+            return textElems.ElementAt(distIdx); 
         }
 
         private String ScrapeGoing(IDocument document)
