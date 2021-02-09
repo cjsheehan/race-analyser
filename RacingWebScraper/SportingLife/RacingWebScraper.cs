@@ -128,6 +128,12 @@ namespace RacingWebScraper
                         foreach (var race in races)
                         {
                             RaceType type;
+                            if (race.name == null)
+                            {
+                                _ntf.Notify(String.Format("Failed to get {0} -> {1} due to missing race name, skipping.", course, race.time), Ntf.WARNING);
+                                continue;
+                            }
+
                             if (race.name.ToUpper().Contains("HURDLE"))
                                 type = RaceType.HURDLES;
                             else if (race.name.ToUpper().Contains("CHASE"))
