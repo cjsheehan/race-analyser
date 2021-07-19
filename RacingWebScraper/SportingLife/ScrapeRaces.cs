@@ -151,10 +151,10 @@ namespace RacingWebScraper
             var selector = "[class^='RacingRacecardSummary__StyledAdditionalInfo']";
             var textContent = ScrapeTextContent(document, selector);
             var textElems = textContent.Split('|').Select(info => info.Trim()).ToList();
-            int distIdx = 1;
-            if (!textElems.ElementAt(0).Contains("Class"))
+            int distIdx = 2;
+            if (!textElems.ElementAt(1).Contains("Class"))
             {
-                distIdx = 0;
+                distIdx = 1;
             }
             return textElems.ElementAt(distIdx); 
         }

@@ -185,6 +185,7 @@ namespace RacingWebScraper
         private RaceAdditionalInfo ScrapeRaceAdditionalInfo (IDocument lastRaceDocument)
         {
             RaceAdditionalInfo raceInfo = new RaceAdditionalInfo();
+            // 3YO plus  |   Class 4  |   2m 4f 88y  |   Good  |   7 Runners  |   Turf
             // 1m 2f 150y | Standard   | 13 Runners | Polytrack
             //  Class 1   | 2m 4f 10y  |  7 Runners | Turf
             //   Class 5  |   2m 128y  |  9 Runners | Turf
@@ -194,14 +195,22 @@ namespace RacingWebScraper
             var infoSelector = "div > [class^='RacingRacecardSummary__StyledAdditionalInfo-']";
             String summary = ScrapeTextContent(lastRaceDocument, infoSelector);
             List<String> summaryElems = summary.Split('|').Select(info => info.Trim()).ToList();
-            int classIdx = 0;
-            int distIdx = 1;
-            int goingIdx = 2;
-            if(!summaryElems.ElementAt(0).Contains("Class"))
+            int ageIdx = 0;
+            int classIdx = 1;
+            int distIdx = 2;
+            int goingIdx = 3;
+            if (!summaryElems.ElementAt(ageIdx).Contains("YO"))
+            {
+                ageIdx = -1;
+                --classIdx;
+                --distIdx;
+                --goingIdx;
+            }
+            if (!summaryElems.ElementAt(classIdx).Contains("Class"))
             {
                 classIdx = -1;
-                distIdx = 0;
-                goingIdx = 1;
+                --distIdx;
+                --goingIdx;
             }
             // If the element at distance + 1 contaings "Runners", then no going available
             if(summaryElems.ElementAt(distIdx + 1).Contains("Runners"))
