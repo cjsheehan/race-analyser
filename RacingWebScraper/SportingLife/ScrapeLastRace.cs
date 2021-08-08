@@ -277,9 +277,9 @@ namespace RacingWebScraper
 
         private bool IsWeighedIn(IDocument lastRaceDocument)
         {
-            var selector = "[class^='RacingRacecardSummary__StyledWeighedIn']";
+            var selector = "[class^='RacingRacecardSummary__StyledEndedState']";
             var element = ScrapeTextContent(lastRaceDocument, selector);
-            if (!String.IsNullOrEmpty(element))
+            if (!String.IsNullOrEmpty(element) && element.ToLower().Contains("weighed in"))
             {
                 return true;
             }
