@@ -307,11 +307,20 @@ namespace RacingWebScraper
 
         private String ScrapeLastWinningTime(IDocument lastRaceDocument)
         {
-            var selector = "[class^='RacingRacecardSummary']:nth-of-type(2)";
-            var textContent = ScrapeTextContent(lastRaceDocument, selector);
-            var winTime = textContent
-                .Split(':').ElementAt(3)
-                .Trim();
+            var selector = "[class^='RacingRacecardSummary']";
+            IHtmlCollection<IElement> elems = lastRaceDocument.QuerySelectorAll(selector);
+            var winTime = "";
+            foreach (var elem in elems) 
+            {
+                if (!elem.TextContent.ToLower().Contains("winning time"))
+                {
+                    continue;
+                }
+                winTime = elem.TextContent
+                    .Split(':').ElementAt(3)
+                    .Trim();
+            }
+
             return winTime;
         }
 
