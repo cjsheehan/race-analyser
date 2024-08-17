@@ -3,14 +3,17 @@ using AngleSharp.Dom;
 using AngleSharp.Dom.Html;
 using AngleSharp.Parser.Html;
 using Racing;
+using Racing.Classes;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Race = Racing.Race;
 
 namespace RacingWebScraper
 {
@@ -67,6 +70,12 @@ namespace RacingWebScraper
             {
                 String msg = string.Format(" scrape : {0} {1}", stringMap["course"], stringMap["time"]);
                 var document = await HtmlService.GetDocumentAsync(stringMap["url"]).ConfigureAwait(false);
+                var config = Configuration.Default;
+                //Create a new context for evaluating webpages with the given config
+                var context = BrowsingContext.New(config);
+
+                //Create a virtual request to specify the document to load (here from our fixed string)
+                var doc = await context.OpenAsync(req => req.Content(document.ToString()));
                 _currentRace = stringMap["url"];
                 _ntf.Notify("Started" + msg, Ntf.MESSAGE);
                 try

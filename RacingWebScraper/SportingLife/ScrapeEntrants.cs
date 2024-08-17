@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using AngleSharp.Parser.Html;
 using System.Collections.Concurrent;
+using AngleSharp;
+using AngleSharp.Extensions;
 
 namespace RacingWebScraper
 {
@@ -127,7 +129,8 @@ namespace RacingWebScraper
         private static IHtmlCollection<IElement> ScrapeRacecardRunnerElements(IDocument document)
         {
             var selector = "[class^='PreRace__RacecardRunner'] > div";
-            return document.QuerySelectorAll(selector);
+            var doc = document.QuerySelectorAll(selector);
+            return doc;
         }
 
         private String ScrapeLastPositionFromForm(String form)
